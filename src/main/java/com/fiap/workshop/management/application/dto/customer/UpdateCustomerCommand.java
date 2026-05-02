@@ -1,4 +1,9 @@
 package com.fiap.workshop.management.application.dto.customer;
 
-public record UpdateCustomerCommand() {
-}
+import jakarta.validation.constraints.NotBlank;
+
+public record UpdateCustomerCommand(
+        @NotBlank String name,
+        String phone,
+        String email
+) {}
