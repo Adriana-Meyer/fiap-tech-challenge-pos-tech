@@ -10,11 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class RejectEstimateUseCase {
+public class StartDiagnosisUseCase {
 
     private final ServiceOrderRepository serviceOrderRepository;
 
-    public RejectEstimateUseCase(ServiceOrderRepository serviceOrderRepository) {
+    public StartDiagnosisUseCase(ServiceOrderRepository serviceOrderRepository) {
         this.serviceOrderRepository = serviceOrderRepository;
     }
 
@@ -22,7 +22,7 @@ public class RejectEstimateUseCase {
     public ServiceOrderResponse execute(UUID id) {
         ServiceOrder order = serviceOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceOrder", id));
-        order.rejectEstimate();
+        order.startDiagnosis();
         return ServiceOrderResponse.from(serviceOrderRepository.save(order));
     }
 }
