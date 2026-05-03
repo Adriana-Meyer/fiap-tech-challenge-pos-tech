@@ -75,6 +75,25 @@ class StockManagementServiceTest {
     }
 
     @Test
+    @DisplayName("should return only supply items in deducted list")
+    void shouldReturnOnlySupplyItemsInDeductedList() {
+        ServiceCatalogItem catalogItem = ServiceCatalogItem.create(
+                "Oil Change", "desc", ServiceType.MECHANICAL, Money.of(100.00));
+        Supply supply = new Supply(UUID.randomUUID(), "P001", "Oil Filter", "desc",
+                SupplyType.PART, Money.of(20.00), 10, 2);
+
+        ServiceOrderItem serviceItem = ServiceOrderItem.createServiceItem(orderId, catalogItem, 1);
+        ServiceOrderItem supplyItem = ServiceOrderItem.createSupplyItem(orderId, supply, 3);
+        when(supplyRepository.findById(supply.getId())).thenReturn(Optional.of(supply));
+
+        List<Supply> result = stockService.deductStock(List.of(serviceItem, supplyItem));
+
+        assertEquals(1, result.size());
+        assertEquals(supply.getId(), result.get(0).getId());
+        assertEquals(7, result.get(0).getStockQuantity());
+    }
+
+    @Test
     @DisplayName("should throw IllegalStateException when supply is not found in repository")
     void shouldThrowIllegalStateExceptionWhenSupplyIsNotFoundInRepository() {
         Supply supply = new Supply(UUID.randomUUID(), "P003", "Filter", "desc",
