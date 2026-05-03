@@ -184,6 +184,18 @@ class ServiceOrderLifecycleIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("should return 400 when completing diagnosis with blank notes")
+    void shouldReturn400WhenCompletingDiagnosisWithBlankNotes() throws Exception {
+        UUID orderId = createServiceOrder();
+        performPatch("/api/v1/service-orders/" + orderId + "/diagnosis/start", mechanicToken);
+
+        performPost("/api/v1/service-orders/" + orderId + "/diagnosis/complete",
+                "{\"diagnosisNotes\":\"\"}",
+                mechanicToken)
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("should return tracking info without authentication")
     void shouldReturnTrackingInfoWithoutAuthentication() throws Exception {
         UUID orderId = createServiceOrder();
