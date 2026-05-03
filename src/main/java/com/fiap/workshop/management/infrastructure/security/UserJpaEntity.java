@@ -16,7 +16,7 @@ import java.util.List;
 public class UserJpaEntity implements UserDetails {
 
     @Id
-    @Column(name = "id", length = 36, nullable = false)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private String id;
 
     @Column(name = "email", length = 255, nullable = false, unique = true)

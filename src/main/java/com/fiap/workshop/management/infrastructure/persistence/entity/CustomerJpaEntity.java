@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class CustomerJpaEntity {
 
     @Id
-    @Column(name = "id", length = 36, nullable = false)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private String id;
 
     @Column(name = "document_value", length = 14, nullable = false)

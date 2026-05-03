@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class ServiceOrderItemJpaEntity {
 
     @Id
-    @Column(name = "id", length = 36, nullable = false)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)

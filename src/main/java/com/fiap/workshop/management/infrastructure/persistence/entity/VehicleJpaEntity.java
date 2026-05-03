@@ -10,7 +10,7 @@ import jakarta.persistence.Table;
 public class VehicleJpaEntity {
 
     @Id
-    @Column(name = "id", length = 36, nullable = false)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private String id;
 
     @Column(name = "plate_value", length = 8, nullable = false)
@@ -28,7 +28,7 @@ public class VehicleJpaEntity {
     @Column(name = "color", length = 50)
     private String color;
 
-    @Column(name = "customer_id", length = 36, nullable = false)
+    @Column(name = "customer_id", columnDefinition = "CHAR(36)", nullable = false)
     private String customerId;
 
     protected VehicleJpaEntity() {}
