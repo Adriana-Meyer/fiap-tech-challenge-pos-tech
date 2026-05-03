@@ -115,7 +115,7 @@ public class ServiceOrderController {
 
     @PostMapping("/{id}/diagnosis/complete")
     public ServiceOrderResponse completeDiagnosis(@PathVariable UUID id,
-                                                   @RequestBody CompleteDiagnosisCommand command) {
+                                                   @Valid @RequestBody CompleteDiagnosisCommand command) {
         return completeDiagnosisUseCase.execute(id, command);
     }
 

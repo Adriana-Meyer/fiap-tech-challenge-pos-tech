@@ -8,7 +8,7 @@ import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrder;
 import com.fiap.workshop.management.domain.repository.CustomerRepository;
 import com.fiap.workshop.management.domain.repository.ServiceOrderRepository;
 import com.fiap.workshop.management.domain.service.BudgetCalculationService;
-import com.fiap.workshop.management.infrastructure.notification.MockEstimateNotificationService;
+import com.fiap.workshop.management.domain.service.EstimateNotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,12 +20,12 @@ public class CompleteDiagnosisUseCase {
     private final ServiceOrderRepository serviceOrderRepository;
     private final CustomerRepository customerRepository;
     private final BudgetCalculationService budgetCalculationService;
-    private final MockEstimateNotificationService notificationService;
+    private final EstimateNotificationService notificationService;
 
     public CompleteDiagnosisUseCase(ServiceOrderRepository serviceOrderRepository,
                                      CustomerRepository customerRepository,
                                      BudgetCalculationService budgetCalculationService,
-                                     MockEstimateNotificationService notificationService) {
+                                     EstimateNotificationService notificationService) {
         this.serviceOrderRepository = serviceOrderRepository;
         this.customerRepository = customerRepository;
         this.budgetCalculationService = budgetCalculationService;
