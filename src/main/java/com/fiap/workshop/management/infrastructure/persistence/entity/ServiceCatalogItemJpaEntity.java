@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 public class ServiceCatalogItemJpaEntity {
 
     @Id
-    @Column(name = "id", length = 36, nullable = false)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private String id;
 
     @Column(name = "name", nullable = false)

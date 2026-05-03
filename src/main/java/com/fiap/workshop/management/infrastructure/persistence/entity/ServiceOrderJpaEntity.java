@@ -18,7 +18,7 @@ import java.util.List;
 public class ServiceOrderJpaEntity {
 
     @Id
-    @Column(name = "id", length = 36, nullable = false)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private String id;
 
     @Column(name = "os_code", length = 20, nullable = false)
@@ -27,10 +27,10 @@ public class ServiceOrderJpaEntity {
     @Column(name = "status", length = 30, nullable = false)
     private String status;
 
-    @Column(name = "customer_id", length = 36, nullable = false)
+    @Column(name = "customer_id", columnDefinition = "CHAR(36)", nullable = false)
     private String customerId;
 
-    @Column(name = "vehicle_id", length = 36, nullable = false)
+    @Column(name = "vehicle_id", columnDefinition = "CHAR(36)", nullable = false)
     private String vehicleId;
 
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
