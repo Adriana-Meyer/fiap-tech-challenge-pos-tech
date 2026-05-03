@@ -57,9 +57,9 @@ class LicensePlateTest {
     }
 
     @Test
-    @DisplayName("should throw InvalidLicensePlateException when Mercosul pattern is invalid")
-    void shouldThrowWhenMercosulPatternIsInvalid() {
-        assertThrows(InvalidLicensePlateException.class, () -> new LicensePlate("ABC1123"));
+    @DisplayName("should throw InvalidLicensePlateException when plate matches neither legacy nor Mercosul pattern")
+    void shouldThrowWhenPlateMatchesNeitherLegacyNorMercosulPattern() {
+        assertThrows(InvalidLicensePlateException.class, () -> new LicensePlate("ABC11D3"));
     }
 
     @Test
