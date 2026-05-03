@@ -6,6 +6,7 @@ import com.fiap.workshop.management.domain.exception.InvalidLicensePlateExceptio
 import com.fiap.workshop.management.domain.exception.InvalidStatusTransitionException;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,6 +21,12 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     record ErrorResponse(int status, String error, String message, LocalDateTime timestamp) {}
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleBadCredentials(BadCredentialsException ex) {
+        return new ErrorResponse(401, "Unauthorized", "Invalid credentials", LocalDateTime.now());
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
