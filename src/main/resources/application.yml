@@ -23,15 +23,9 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-  # Placeholder credentials for development — replaced with JWT in Phase 5
-  security:
-    user:
-      name: dev
-      password: dev
-
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-must-be-at-least-64-characters-long-for-hs512}
+    secret: ${JWT_SECRET:dev-only-secret-must-be-at-least-64-characters-long-for-hs512-ok}
     expiration-ms: 86400000
 
 springdoc:

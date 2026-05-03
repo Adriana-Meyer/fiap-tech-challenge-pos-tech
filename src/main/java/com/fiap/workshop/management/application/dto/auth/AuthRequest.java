@@ -1,4 +1,9 @@
 package com.fiap.workshop.management.application.dto.auth;
 
-public record AuthRequest() {
-}
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+public record AuthRequest(
+        @NotBlank @Email String email,
+        @NotBlank String password
+) {}
