@@ -184,6 +184,41 @@ class ServiceOrderLifecycleIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("should return analytics grouped by individual service name with correct fields")
+    void shouldReturnAnalyticsGroupedByIndividualServiceNameWithCorrectFields() throws Exception {
+        UUID orderId = createServiceOrder();
+
+        performPatch("/api/v1/service-orders/" + orderId + "/diagnosis/start", mechanicToken);
+
+        String afterAddItem = performPost("/api/v1/service-orders/" + orderId + "/items",
+                """
+                {"serviceCatalogItemId":"%s","quantity":1}
+                """.formatted(catalogItemId), mechanicToken)
+                .andReturn().getResponse().getContentAsString();
+
+        UUID itemId = UUID.fromString(
+                objectMapper.readTree(afterAddItem).get("items").get(0).get("id").asText());
+
+        performPost("/api/v1/service-orders/" + orderId + "/diagnosis/complete",
+                """
+                {"diagnosisNotes":"Test execution time analytics"}
+                """, mechanicToken);
+        performPatch("/api/v1/service-orders/" + orderId + "/estimate/approve", adminToken);
+        performPatch("/api/v1/service-orders/" + orderId + "/items/" + itemId + "/start", mechanicToken);
+        performPatch("/api/v1/service-orders/" + orderId + "/items/" + itemId + "/finish", mechanicToken);
+
+        mockMvc.perform(get("/api/v1/service-orders/analytics/avg-execution-time")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].serviceId").isNotEmpty())
+                .andExpect(jsonPath("$[0].serviceName").value("Oil Change"))
+                .andExpect(jsonPath("$[0].serviceType").value("MECHANICAL"))
+                .andExpect(jsonPath("$[0].averageMinutes").isNumber())
+                .andExpect(jsonPath("$[0].sampleCount").value(1));
+    }
+
+    @Test
     @DisplayName("should return 400 when completing diagnosis with blank notes")
     void shouldReturn400WhenCompletingDiagnosisWithBlankNotes() throws Exception {
         UUID orderId = createServiceOrder();
