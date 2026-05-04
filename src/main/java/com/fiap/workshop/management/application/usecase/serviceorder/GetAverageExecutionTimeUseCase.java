@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.AverageExecutionTimeResponse;
+import com.fiap.workshop.management.domain.model.catalog.ServiceCatalogItem;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrderItem;
 import com.fiap.workshop.management.domain.repository.ServiceOrderRepository;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,20 +25,22 @@ public class GetAverageExecutionTimeUseCase {
     @Transactional(readOnly = true)
     public List<AverageExecutionTimeResponse> execute() {
         List<ServiceOrderItem> items = serviceOrderRepository.findCompletedServiceItems();
-        Map<String, List<ServiceOrderItem>> byType = items.stream()
+        Map<UUID, List<ServiceOrderItem>> byService = items.stream()
                 .filter(i -> i.getService() != null)
-                .collect(Collectors.groupingBy(i -> i.getService().getType().name()));
+                .collect(Collectors.groupingBy(i -> i.getService().getId()));
 
-        return byType.entrySet().stream()
+        return byService.entrySet().stream()
                 .map(entry -> {
-                    List<ServiceOrderItem> typeItems = entry.getValue();
-                    double avgMinutes = typeItems.stream()
+                    List<ServiceOrderItem> serviceItems = entry.getValue();
+                    ServiceCatalogItem service = serviceItems.get(0).getService();
+                    double avgMinutes = serviceItems.stream()
                             .mapToLong(i -> Duration.between(
                                     i.getExecutionStartedAt(), i.getExecutionFinishedAt()).toMinutes())
                             .average()
                             .orElse(0);
                     return new AverageExecutionTimeResponse(
-                            entry.getKey(), avgMinutes, avgMinutes / 60.0, typeItems.size());
+                            service.getId(), service.getName(), service.getType().name(),
+                            avgMinutes, avgMinutes / 60.0, serviceItems.size());
                 })
                 .toList();
     }
