@@ -70,6 +70,13 @@ class MoneyTest {
     }
 
     @Test
+    @DisplayName("should have consistent hashCode for two zero Money instances")
+    void shouldHaveConsistentHashCodeForTwoZeroMoneyInstances() {
+        assertEquals(Money.zero(), Money.zero());
+        assertEquals(Money.zero().hashCode(), Money.zero().hashCode());
+    }
+
+    @Test
     @DisplayName("should return plain string when calling toString")
     void shouldReturnPlainStringWhenCallingToString() {
         assertEquals("10.50", Money.of(10.5).toString());
