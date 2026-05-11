@@ -40,7 +40,7 @@ public class CompleteDiagnosisUseCase {
         ServiceOrder saved = serviceOrderRepository.save(order);
         Customer customer = customerRepository.findById(order.getCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", order.getCustomerId()));
-        notificationService.notifyEstimateReady(saved.getOsCode(), customer.getEmail());
+        notificationService.notifyEstimateReady(saved, customer);
         return ServiceOrderResponse.from(saved);
     }
 }
