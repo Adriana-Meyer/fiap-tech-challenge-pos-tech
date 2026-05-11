@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.interfaces.rest;
 
 import com.fiap.workshop.management.domain.exception.DuplicateResourceException;
+import com.fiap.workshop.management.domain.exception.ResourceInUseException;
 import com.fiap.workshop.management.domain.exception.InvalidDocumentException;
 import com.fiap.workshop.management.domain.exception.InvalidLicensePlateException;
 import com.fiap.workshop.management.domain.exception.InvalidStatusTransitionException;
@@ -41,6 +42,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateResourceException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflict(DuplicateResourceException ex) {
+        return new ErrorResponse(409, "Conflict", ex.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(ResourceInUseException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleResourceInUse(ResourceInUseException ex) {
         return new ErrorResponse(409, "Conflict", ex.getMessage(), LocalDateTime.now());
     }
 
