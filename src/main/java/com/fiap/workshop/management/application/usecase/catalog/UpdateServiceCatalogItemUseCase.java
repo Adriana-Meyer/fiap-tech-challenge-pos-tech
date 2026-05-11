@@ -25,6 +25,11 @@ public class UpdateServiceCatalogItemUseCase {
         ServiceCatalogItem item = serviceCatalogRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceCatalogItem", id));
         item.update(command.name(), command.description(), command.type(), Money.of(command.basePrice()));
+        if (Boolean.TRUE.equals(command.active())) {
+            item.activate();
+        } else if (Boolean.FALSE.equals(command.active())) {
+            item.deactivate();
+        }
         return ServiceCatalogItemResponse.from(serviceCatalogRepository.save(item));
     }
 }

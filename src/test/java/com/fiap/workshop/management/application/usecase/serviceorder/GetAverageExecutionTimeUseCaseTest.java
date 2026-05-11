@@ -45,26 +45,39 @@ class GetAverageExecutionTimeUseCaseTest {
     }
 
     @Test
-    @DisplayName("should return average execution time grouped by service type")
-    void shouldReturnAverageExecutionTimeGroupedByServiceType() {
-        ServiceCatalogItem catalogItem = ServiceCatalogItem.create(
-                "Oil Change", "desc", ServiceType.MECHANICAL, Money.of(100.00));
+    @DisplayName("should return average execution time grouped by individual service")
+    void shouldReturnAverageExecutionTimeGroupedByIndividualService() {
+        ServiceCatalogItem oilChange = ServiceCatalogItem.create(
+                "Oil Change", "desc", ServiceType.MECHANICAL, Money.of(150.00));
+        ServiceCatalogItem brakeCheck = ServiceCatalogItem.create(
+                "Brake Check", "desc", ServiceType.MECHANICAL, Money.of(200.00));
         UUID orderId = UUID.randomUUID();
 
-        LocalDateTime start = LocalDateTime.now().minusHours(2);
-        LocalDateTime finish = LocalDateTime.now();
-        ServiceOrderItem item = new ServiceOrderItem(
-                UUID.randomUUID(), orderId, catalogItem, null,
-                1, Money.of(100.00), Money.of(100.00), start, finish);
+        LocalDateTime now = LocalDateTime.now();
+        ServiceOrderItem item1 = new ServiceOrderItem(UUID.randomUUID(), orderId, oilChange, null,
+                1, Money.of(150.00), Money.of(150.00), now.minusMinutes(45), now);
+        ServiceOrderItem item2 = new ServiceOrderItem(UUID.randomUUID(), orderId, oilChange, null,
+                1, Money.of(150.00), Money.of(150.00), now.minusMinutes(15), now);
+        ServiceOrderItem item3 = new ServiceOrderItem(UUID.randomUUID(), orderId, brakeCheck, null,
+                1, Money.of(200.00), Money.of(200.00), now.minusMinutes(30), now);
 
-        when(serviceOrderRepository.findCompletedServiceItems()).thenReturn(List.of(item));
+        when(serviceOrderRepository.findCompletedServiceItems()).thenReturn(List.of(item1, item2, item3));
 
         List<AverageExecutionTimeResponse> result = useCase.execute();
 
-        assertEquals(1, result.size());
-        assertEquals("MECHANICAL", result.get(0).serviceType());
-        assertEquals(1, result.get(0).sampleCount());
-        assertTrue(result.get(0).averageMinutes() > 0);
+        assertEquals(2, result.size());
+
+        AverageExecutionTimeResponse oilResult = result.stream()
+                .filter(r -> r.serviceName().equals("Oil Change")).findFirst().orElseThrow();
+        assertEquals(oilChange.getId(), oilResult.serviceId());
+        assertEquals("MECHANICAL", oilResult.serviceType());
+        assertEquals(30.0, oilResult.averageMinutes());
+        assertEquals(2, oilResult.sampleCount());
+
+        AverageExecutionTimeResponse brakeResult = result.stream()
+                .filter(r -> r.serviceName().equals("Brake Check")).findFirst().orElseThrow();
+        assertEquals(30.0, brakeResult.averageMinutes());
+        assertEquals(1, brakeResult.sampleCount());
     }
 
     @Test
