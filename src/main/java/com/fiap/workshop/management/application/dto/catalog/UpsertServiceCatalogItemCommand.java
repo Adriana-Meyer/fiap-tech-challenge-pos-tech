@@ -11,5 +11,6 @@ public record UpsertServiceCatalogItemCommand(
         @NotBlank String name,
         String description,
         @NotNull ServiceType type,
-        @NotNull @Positive BigDecimal basePrice
+        @NotNull @Positive BigDecimal basePrice,
+        Boolean active
 ) {}
