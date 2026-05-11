@@ -204,3 +204,111 @@ src/main/java/com/fiap/workshop/management/
 ```
 
 O domínio é POJO puro — testável sem Spring. As entidades JPA ficam na camada de infraestrutura e são mapeadas para o domínio por adapters.
+
+---
+
+## Modelagem do Banco de Dados
+
+### Escolha do Banco — MySQL 8
+
+O MySQL foi escolhido pelos seguintes motivos:
+
+| Critério | Justificativa |
+|---|---|
+| **Relacionamentos** | Os dados do sistema são fortemente relacionais: clientes possuem veículos, veículos possuem OS, OS possuem itens que referenciam serviços e peças. Um banco relacional é o modelo natural para esse domínio. |
+| **ACID** | Transações ACID garantem consistência no controle de estoque (decremento na aprovação do orçamento) e nos cálculos financeiros dos totais das OS. |
+| **Integridade referencial** | Chaves estrangeiras com `ENGINE=InnoDB` impedem, por exemplo, exclusão de clientes com OS em aberto ou veículos vinculados. |
+| **Maturidade e ecossistema** | Amplo suporte no ecossistema Spring (Spring Data JPA + Hibernate), drivers estáveis, e fácil containerização com a imagem oficial `mysql:8.0`. |
+| **Flyway** | Migrações versionadas garantem que o schema evolua de forma controlada e reproduzível em qualquer ambiente (local, CI, produção). |
+
+### Diagrama Entidade-Relacionamento
+
+```mermaid
+erDiagram
+    customers {
+        CHAR(36)     id            PK
+        VARCHAR(14)  document_value UK
+        VARCHAR(10)  document_type
+        VARCHAR(255) name
+        VARCHAR(20)  phone
+        VARCHAR(255) email
+        DATETIME     created_at
+    }
+
+    vehicles {
+        CHAR(36)     id          PK
+        VARCHAR(8)   plate_value UK
+        VARCHAR(100) brand
+        VARCHAR(100) model
+        INT          year
+        VARCHAR(50)  color
+        CHAR(36)     customer_id FK
+    }
+
+    service_catalog_items {
+        CHAR(36)      id         PK
+        VARCHAR(255)  name
+        TEXT          description
+        VARCHAR(50)   type
+        DECIMAL(15_2) base_price
+        BOOLEAN       active
+    }
+
+    supplies {
+        CHAR(36)      id             PK
+        VARCHAR(50)   code           UK
+        VARCHAR(255)  name
+        TEXT          description
+        VARCHAR(20)   type
+        DECIMAL(15_2) unit_price
+        INT           stock_quantity
+        INT           minimum_stock
+    }
+
+    service_orders {
+        CHAR(36)      id                    PK
+        VARCHAR(20)   os_code               UK
+        VARCHAR(30)   status
+        CHAR(36)      customer_id           FK
+        CHAR(36)      vehicle_id            FK
+        DECIMAL(15_2) total_amount
+        TEXT          diagnosis_notes
+        DATETIME      received_at
+        DATETIME      diagnosis_started_at
+        DATETIME      waiting_approval_at
+        DATETIME      execution_started_at
+        DATETIME      execution_finished_at
+        DATETIME      delivered_at
+        DATETIME      created_at
+        DATETIME      updated_at
+    }
+
+    service_order_items {
+        CHAR(36)      id                      PK
+        CHAR(36)      service_order_id        FK
+        CHAR(36)      service_catalog_item_id FK "nullable"
+        CHAR(36)      supply_id               FK "nullable"
+        INT           quantity
+        DECIMAL(15_2) unit_price
+        DECIMAL(15_2) subtotal
+        DATETIME      execution_started_at
+        DATETIME      execution_finished_at
+    }
+
+    users {
+        CHAR(36)      id            PK
+        VARCHAR(255)  email         UK
+        VARCHAR(255)  password_hash
+        VARCHAR(20)   role
+        BOOLEAN       active
+    }
+
+    customers    ||--o{ vehicles            : "possui"
+    customers    ||--o{ service_orders      : "titular de"
+    vehicles     ||--o{ service_orders      : "objeto de"
+    service_orders ||--o{ service_order_items : "contém"
+    service_catalog_items ||--o{ service_order_items : "referenciado em"
+    supplies     ||--o{ service_order_items : "referenciado em"
+```
+
+> **Nota:** Um `service_order_item` representa serviço **ou** peça/insumo — as FKs `service_catalog_item_id` e `supply_id` são mutuamente opcionais, com a restrição `CHECK` garantindo que ao menos uma esteja preenchida.
