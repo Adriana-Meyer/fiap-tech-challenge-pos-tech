@@ -39,25 +39,67 @@ class UpdateServiceCatalogItemUseCaseTest {
     }
 
     @Test
-    @DisplayName("should update catalog item and return updated response")
-    void shouldUpdateCatalogItemAndReturnUpdatedResponse() {
+    @DisplayName("should update catalog item fields and return updated response")
+    void shouldUpdateCatalogItemFieldsAndReturnUpdatedResponse() {
         UpsertServiceCatalogItemCommand command = new UpsertServiceCatalogItemCommand(
-                "Wheel Alignment", "Updated desc", ServiceType.MECHANICAL, new BigDecimal("200.00"));
+                "Wheel Alignment", "Updated desc", ServiceType.MECHANICAL, new BigDecimal("200.00"), null);
         when(serviceCatalogRepository.findById(id)).thenReturn(Optional.of(item));
         when(serviceCatalogRepository.save(item)).thenReturn(item);
 
         ServiceCatalogItemResponse response = useCase.execute(id, command);
 
         assertEquals("Wheel Alignment", item.getName());
+        assertTrue(item.isActive());
         verify(serviceCatalogRepository).save(item);
         assertNotNull(response);
+    }
+
+    @Test
+    @DisplayName("should reactivate inactive item when active is true")
+    void shouldReactivateInactiveItemWhenActiveIsTrue() {
+        item.deactivate();
+        UpsertServiceCatalogItemCommand command = new UpsertServiceCatalogItemCommand(
+                "Oil Change", "desc", ServiceType.MECHANICAL, new BigDecimal("150.00"), true);
+        when(serviceCatalogRepository.findById(id)).thenReturn(Optional.of(item));
+        when(serviceCatalogRepository.save(item)).thenReturn(item);
+
+        useCase.execute(id, command);
+
+        assertTrue(item.isActive());
+    }
+
+    @Test
+    @DisplayName("should deactivate item when active is false")
+    void shouldDeactivateItemWhenActiveIsFalse() {
+        UpsertServiceCatalogItemCommand command = new UpsertServiceCatalogItemCommand(
+                "Oil Change", "desc", ServiceType.MECHANICAL, new BigDecimal("150.00"), false);
+        when(serviceCatalogRepository.findById(id)).thenReturn(Optional.of(item));
+        when(serviceCatalogRepository.save(item)).thenReturn(item);
+
+        useCase.execute(id, command);
+
+        assertFalse(item.isActive());
+    }
+
+    @Test
+    @DisplayName("should keep current active status when active field is null")
+    void shouldKeepCurrentActiveStatusWhenActiveFieldIsNull() {
+        item.deactivate();
+        UpsertServiceCatalogItemCommand command = new UpsertServiceCatalogItemCommand(
+                "Oil Change", "desc", ServiceType.MECHANICAL, new BigDecimal("150.00"), null);
+        when(serviceCatalogRepository.findById(id)).thenReturn(Optional.of(item));
+        when(serviceCatalogRepository.save(item)).thenReturn(item);
+
+        useCase.execute(id, command);
+
+        assertFalse(item.isActive());
     }
 
     @Test
     @DisplayName("should throw ResourceNotFoundException when catalog item not found")
     void shouldThrowResourceNotFoundExceptionWhenCatalogItemNotFound() {
         UpsertServiceCatalogItemCommand command = new UpsertServiceCatalogItemCommand(
-                "Wheel Alignment", "desc", ServiceType.MECHANICAL, new BigDecimal("200.00"));
+                "Wheel Alignment", "desc", ServiceType.MECHANICAL, new BigDecimal("200.00"), null);
         when(serviceCatalogRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> useCase.execute(id, command));
