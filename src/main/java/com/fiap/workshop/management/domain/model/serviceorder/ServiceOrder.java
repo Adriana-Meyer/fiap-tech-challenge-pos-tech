@@ -107,8 +107,8 @@ public class ServiceOrder {
     }
 
     public void addItem(ServiceOrderItem item) {
-        if (this.status != ServiceOrderStatus.IN_DIAGNOSIS) {
-            throw new InvalidStatusTransitionException("Items can only be added when the order is IN_DIAGNOSIS");
+        if (this.status != ServiceOrderStatus.RECEIVED && this.status != ServiceOrderStatus.IN_DIAGNOSIS) {
+            throw new InvalidStatusTransitionException("Items can only be added when the order is RECEIVED or IN_DIAGNOSIS");
         }
         this.items.add(item);
         this.updatedAt = LocalDateTime.now();

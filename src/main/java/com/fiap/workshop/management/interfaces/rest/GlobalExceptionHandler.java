@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.interfaces.rest;
 
 import com.fiap.workshop.management.domain.exception.DuplicateResourceException;
+import com.fiap.workshop.management.domain.exception.InvalidWebhookTokenException;
 import com.fiap.workshop.management.domain.exception.ResourceInUseException;
 import com.fiap.workshop.management.domain.exception.InvalidDocumentException;
 import com.fiap.workshop.management.domain.exception.InvalidLicensePlateException;
@@ -9,6 +10,7 @@ import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,6 +33,18 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse handleBadCredentials(BadCredentialsException ex) {
         return new ErrorResponse(401, "Unauthorized", "Invalid credentials", LocalDateTime.now());
+    }
+
+    @ExceptionHandler(InvalidWebhookTokenException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleInvalidWebhookToken(InvalidWebhookTokenException ex) {
+        return new ErrorResponse(401, "Unauthorized", ex.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMalformedRequest(HttpMessageNotReadableException ex) {
+        return new ErrorResponse(400, "Bad Request", "Malformed request body", LocalDateTime.now());
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

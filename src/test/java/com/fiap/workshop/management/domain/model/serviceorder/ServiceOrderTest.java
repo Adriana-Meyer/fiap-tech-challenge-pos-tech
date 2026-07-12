@@ -186,9 +186,17 @@ class ServiceOrderTest {
     }
 
     @Test
-    @DisplayName("should throw InvalidStatusTransitionException when addItem is called and status is not IN_DIAGNOSIS")
-    void shouldThrowWhenAddItemCalledAndStatusIsNotInDiagnosis() {
+    @DisplayName("should add item to list when addItem is called and status is RECEIVED")
+    void shouldAddItemToListWhenAddItemCalledAndStatusIsReceived() {
         ServiceOrder order = newOrder();
+        order.addItem(ServiceOrderItem.createServiceItem(order.getId(), catalogItem(100.00), 1));
+        assertEquals(1, order.getItems().size());
+    }
+
+    @Test
+    @DisplayName("should throw InvalidStatusTransitionException when addItem is called and status is not RECEIVED or IN_DIAGNOSIS")
+    void shouldThrowWhenAddItemCalledAndStatusIsNotReceivedOrInDiagnosis() {
+        ServiceOrder order = waitingApproval();
         ServiceOrderItem item = ServiceOrderItem.createServiceItem(order.getId(), catalogItem(100.00), 1);
         assertThrows(InvalidStatusTransitionException.class, () -> order.addItem(item));
     }
