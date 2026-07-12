@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.supply;
 
 import com.fiap.workshop.management.application.dto.supply.SupplyResponse;
 import com.fiap.workshop.management.application.dto.supply.UpsertSupplyCommand;
+import com.fiap.workshop.management.application.port.in.supply.UpdateSupplyInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.shared.Money;
 import com.fiap.workshop.management.domain.model.supply.Supply;
@@ -12,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class UpdateSupplyUseCase {
+public class UpdateSupplyUseCase implements UpdateSupplyInputPort {
 
     private final SupplyRepository supplyRepository;
 

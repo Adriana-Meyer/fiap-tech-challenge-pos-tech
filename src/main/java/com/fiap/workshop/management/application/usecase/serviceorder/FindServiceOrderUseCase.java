@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderResponse;
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderSummaryResponse;
+import com.fiap.workshop.management.application.port.in.serviceorder.FindServiceOrderInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.repository.ServiceOrderRepository;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class FindServiceOrderUseCase {
+public class FindServiceOrderUseCase implements FindServiceOrderInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
 

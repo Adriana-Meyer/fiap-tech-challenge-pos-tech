@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.CompleteDiagnosisCommand;
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderResponse;
+import com.fiap.workshop.management.application.port.in.serviceorder.CompleteDiagnosisInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.customer.Customer;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrder;
@@ -15,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class CompleteDiagnosisUseCase {
+public class CompleteDiagnosisUseCase implements CompleteDiagnosisInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
     private final CustomerRepository customerRepository;

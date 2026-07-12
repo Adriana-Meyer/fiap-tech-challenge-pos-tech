@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.catalog;
 
 import com.fiap.workshop.management.application.dto.catalog.ServiceCatalogItemResponse;
 import com.fiap.workshop.management.application.dto.catalog.UpsertServiceCatalogItemCommand;
+import com.fiap.workshop.management.application.port.in.catalog.UpdateServiceCatalogItemInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.catalog.ServiceCatalogItem;
 import com.fiap.workshop.management.domain.model.shared.Money;
@@ -12,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class UpdateServiceCatalogItemUseCase {
+public class UpdateServiceCatalogItemUseCase implements UpdateServiceCatalogItemInputPort {
 
     private final ServiceCatalogRepository serviceCatalogRepository;
 

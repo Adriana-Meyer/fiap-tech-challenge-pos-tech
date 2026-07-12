@@ -1,5 +1,6 @@
 package com.fiap.workshop.management.application.usecase.catalog;
 
+import com.fiap.workshop.management.application.port.in.catalog.DeleteServiceCatalogItemInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.catalog.ServiceCatalogItem;
 import com.fiap.workshop.management.domain.repository.ServiceCatalogRepository;
@@ -9,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class DeleteServiceCatalogItemUseCase {
+public class DeleteServiceCatalogItemUseCase implements DeleteServiceCatalogItemInputPort {
 
     private final ServiceCatalogRepository serviceCatalogRepository;
 

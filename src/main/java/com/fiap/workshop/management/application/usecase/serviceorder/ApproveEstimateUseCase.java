@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderResponse;
+import com.fiap.workshop.management.application.port.in.serviceorder.ApproveEstimateInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrder;
 import com.fiap.workshop.management.domain.model.supply.Supply;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class ApproveEstimateUseCase {
+public class ApproveEstimateUseCase implements ApproveEstimateInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
     private final StockManagementService stockManagementService;

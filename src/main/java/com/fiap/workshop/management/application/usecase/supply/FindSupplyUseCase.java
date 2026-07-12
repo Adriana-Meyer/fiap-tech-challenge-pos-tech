@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.application.usecase.supply;
 
 import com.fiap.workshop.management.application.dto.supply.SupplyResponse;
+import com.fiap.workshop.management.application.port.in.supply.FindSupplyInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.repository.SupplyRepository;
 import org.springframework.stereotype.Service;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class FindSupplyUseCase {
+public class FindSupplyUseCase implements FindSupplyInputPort {
 
     private final SupplyRepository supplyRepository;
 

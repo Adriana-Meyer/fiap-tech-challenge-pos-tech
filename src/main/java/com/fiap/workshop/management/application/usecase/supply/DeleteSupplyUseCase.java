@@ -1,5 +1,6 @@
 package com.fiap.workshop.management.application.usecase.supply;
 
+import com.fiap.workshop.management.application.port.in.supply.DeleteSupplyInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.repository.SupplyRepository;
 import org.springframework.stereotype.Service;
@@ -8,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class DeleteSupplyUseCase {
+public class DeleteSupplyUseCase implements DeleteSupplyInputPort {
 
     private final SupplyRepository supplyRepository;
 
