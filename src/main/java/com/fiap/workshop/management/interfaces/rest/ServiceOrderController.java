@@ -13,7 +13,9 @@ import com.fiap.workshop.management.application.port.in.serviceorder.CreateServi
 import com.fiap.workshop.management.application.port.in.serviceorder.DeliverServiceOrderInputPort;
 import com.fiap.workshop.management.application.port.in.serviceorder.FindServiceOrderInputPort;
 import com.fiap.workshop.management.application.port.in.serviceorder.FinishServiceItemExecutionInputPort;
+import com.fiap.workshop.management.application.dto.serviceorder.OpenFullServiceOrderCommand;
 import com.fiap.workshop.management.application.port.in.serviceorder.GetAverageExecutionTimeInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.OpenFullServiceOrderInputPort;
 import com.fiap.workshop.management.application.port.in.serviceorder.RejectEstimateInputPort;
 import com.fiap.workshop.management.application.port.in.serviceorder.RemoveItemFromServiceOrderInputPort;
 import com.fiap.workshop.management.application.port.in.serviceorder.StartDiagnosisInputPort;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,6 +52,7 @@ public class ServiceOrderController {
     private final FinishServiceItemExecutionInputPort finishItemUseCase;
     private final DeliverServiceOrderInputPort deliverUseCase;
     private final GetAverageExecutionTimeInputPort avgExecutionTimeUseCase;
+    private final OpenFullServiceOrderInputPort openFullUseCase;
 
     public ServiceOrderController(CreateServiceOrderInputPort createUseCase,
                                    FindServiceOrderInputPort findUseCase,
@@ -61,7 +65,8 @@ public class ServiceOrderController {
                                    StartServiceItemExecutionInputPort startItemUseCase,
                                    FinishServiceItemExecutionInputPort finishItemUseCase,
                                    DeliverServiceOrderInputPort deliverUseCase,
-                                   GetAverageExecutionTimeInputPort avgExecutionTimeUseCase) {
+                                   GetAverageExecutionTimeInputPort avgExecutionTimeUseCase,
+                                   OpenFullServiceOrderInputPort openFullUseCase) {
         this.createUseCase = createUseCase;
         this.findUseCase = findUseCase;
         this.startDiagnosisUseCase = startDiagnosisUseCase;
@@ -74,6 +79,7 @@ public class ServiceOrderController {
         this.finishItemUseCase = finishItemUseCase;
         this.deliverUseCase = deliverUseCase;
         this.avgExecutionTimeUseCase = avgExecutionTimeUseCase;
+        this.openFullUseCase = openFullUseCase;
     }
 
     @PostMapping
@@ -82,9 +88,16 @@ public class ServiceOrderController {
         return createUseCase.execute(command);
     }
 
+    @PostMapping("/full")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ServiceOrderResponse openFull(@Valid @RequestBody OpenFullServiceOrderCommand command) {
+        return openFullUseCase.execute(command);
+    }
+
     @GetMapping
-    public List<ServiceOrderSummaryResponse> findAll() {
-        return findUseCase.findAll();
+    public List<ServiceOrderSummaryResponse> findAll(
+            @RequestParam(defaultValue = "false") boolean includeCompleted) {
+        return findUseCase.findAll(includeCompleted);
     }
 
     @GetMapping("/{id}")

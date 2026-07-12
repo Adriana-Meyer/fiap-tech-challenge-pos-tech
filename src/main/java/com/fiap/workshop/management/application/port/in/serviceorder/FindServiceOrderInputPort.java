@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface FindServiceOrderInputPort {
     ServiceOrderResponse findById(UUID id);
-    List<ServiceOrderSummaryResponse> findAll();
+    List<ServiceOrderSummaryResponse> findAll(boolean includeCompleted);
 }
