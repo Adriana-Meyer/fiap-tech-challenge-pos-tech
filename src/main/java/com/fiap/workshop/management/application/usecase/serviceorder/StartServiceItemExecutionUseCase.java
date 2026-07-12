@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderResponse;
+import com.fiap.workshop.management.application.port.in.serviceorder.StartServiceItemExecutionInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrder;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrderItem;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class StartServiceItemExecutionUseCase {
+public class StartServiceItemExecutionUseCase implements StartServiceItemExecutionInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
 

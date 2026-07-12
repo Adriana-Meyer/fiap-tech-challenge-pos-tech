@@ -3,11 +3,11 @@ package com.fiap.workshop.management.interfaces.rest;
 import com.fiap.workshop.management.application.dto.supply.StockAdjustmentCommand;
 import com.fiap.workshop.management.application.dto.supply.SupplyResponse;
 import com.fiap.workshop.management.application.dto.supply.UpsertSupplyCommand;
-import com.fiap.workshop.management.application.usecase.supply.AdjustStockUseCase;
-import com.fiap.workshop.management.application.usecase.supply.CreateSupplyUseCase;
-import com.fiap.workshop.management.application.usecase.supply.DeleteSupplyUseCase;
-import com.fiap.workshop.management.application.usecase.supply.FindSupplyUseCase;
-import com.fiap.workshop.management.application.usecase.supply.UpdateSupplyUseCase;
+import com.fiap.workshop.management.application.port.in.supply.AdjustStockInputPort;
+import com.fiap.workshop.management.application.port.in.supply.CreateSupplyInputPort;
+import com.fiap.workshop.management.application.port.in.supply.DeleteSupplyInputPort;
+import com.fiap.workshop.management.application.port.in.supply.FindSupplyInputPort;
+import com.fiap.workshop.management.application.port.in.supply.UpdateSupplyInputPort;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,17 +29,17 @@ import java.util.UUID;
 @RequestMapping("/api/v1/supplies")
 public class SupplyController {
 
-    private final CreateSupplyUseCase createUseCase;
-    private final FindSupplyUseCase findUseCase;
-    private final UpdateSupplyUseCase updateUseCase;
-    private final DeleteSupplyUseCase deleteUseCase;
-    private final AdjustStockUseCase adjustStockUseCase;
+    private final CreateSupplyInputPort createUseCase;
+    private final FindSupplyInputPort findUseCase;
+    private final UpdateSupplyInputPort updateUseCase;
+    private final DeleteSupplyInputPort deleteUseCase;
+    private final AdjustStockInputPort adjustStockUseCase;
 
-    public SupplyController(CreateSupplyUseCase createUseCase,
-                             FindSupplyUseCase findUseCase,
-                             UpdateSupplyUseCase updateUseCase,
-                             DeleteSupplyUseCase deleteUseCase,
-                             AdjustStockUseCase adjustStockUseCase) {
+    public SupplyController(CreateSupplyInputPort createUseCase,
+                             FindSupplyInputPort findUseCase,
+                             UpdateSupplyInputPort updateUseCase,
+                             DeleteSupplyInputPort deleteUseCase,
+                             AdjustStockInputPort adjustStockUseCase) {
         this.createUseCase = createUseCase;
         this.findUseCase = findUseCase;
         this.updateUseCase = updateUseCase;

@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.customer;
 
 import com.fiap.workshop.management.application.dto.customer.CreateCustomerCommand;
 import com.fiap.workshop.management.application.dto.customer.CustomerResponse;
+import com.fiap.workshop.management.application.port.in.customer.CreateCustomerInputPort;
 import com.fiap.workshop.management.domain.exception.DuplicateResourceException;
 import com.fiap.workshop.management.domain.model.customer.Customer;
 import com.fiap.workshop.management.domain.model.customer.Document;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class CreateCustomerUseCase {
+public class CreateCustomerUseCase implements CreateCustomerInputPort {
 
     private final CustomerRepository customerRepository;
 

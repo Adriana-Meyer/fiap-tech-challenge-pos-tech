@@ -1,10 +1,8 @@
 package com.fiap.workshop.management.infrastructure.persistence.adapter;
 
 import com.fiap.workshop.management.domain.model.catalog.ServiceCatalogItem;
-import com.fiap.workshop.management.domain.model.catalog.ServiceType;
-import com.fiap.workshop.management.domain.model.shared.Money;
 import com.fiap.workshop.management.domain.repository.ServiceCatalogRepository;
-import com.fiap.workshop.management.infrastructure.persistence.entity.ServiceCatalogItemJpaEntity;
+import com.fiap.workshop.management.infrastructure.persistence.mapper.ServiceCatalogItemMapper;
 import com.fiap.workshop.management.infrastructure.persistence.repository.ServiceCatalogJpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,50 +14,30 @@ import java.util.UUID;
 public class ServiceCatalogRepositoryAdapter implements ServiceCatalogRepository {
 
     private final ServiceCatalogJpaRepository jpaRepository;
+    private final ServiceCatalogItemMapper mapper;
 
-    public ServiceCatalogRepositoryAdapter(ServiceCatalogJpaRepository jpaRepository) {
+    public ServiceCatalogRepositoryAdapter(ServiceCatalogJpaRepository jpaRepository, ServiceCatalogItemMapper mapper) {
         this.jpaRepository = jpaRepository;
+        this.mapper = mapper;
     }
 
     @Override
     public ServiceCatalogItem save(ServiceCatalogItem item) {
-        return toDomain(jpaRepository.save(toEntity(item)));
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(item)));
     }
 
     @Override
     public Optional<ServiceCatalogItem> findById(UUID id) {
-        return jpaRepository.findById(id.toString()).map(this::toDomain);
+        return jpaRepository.findById(id.toString()).map(mapper::toDomain);
     }
 
     @Override
     public List<ServiceCatalogItem> findAll() {
-        return jpaRepository.findAll().stream().map(this::toDomain).toList();
+        return jpaRepository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public List<ServiceCatalogItem> findAllActive() {
-        return jpaRepository.findByActiveTrue().stream().map(this::toDomain).toList();
-    }
-
-    private ServiceCatalogItem toDomain(ServiceCatalogItemJpaEntity e) {
-        return new ServiceCatalogItem(
-                UUID.fromString(e.getId()),
-                e.getName(),
-                e.getDescription(),
-                ServiceType.valueOf(e.getType()),
-                Money.of(e.getBasePrice()),
-                e.isActive()
-        );
-    }
-
-    private ServiceCatalogItemJpaEntity toEntity(ServiceCatalogItem item) {
-        return new ServiceCatalogItemJpaEntity(
-                item.getId().toString(),
-                item.getName(),
-                item.getDescription(),
-                item.getType().name(),
-                item.getBasePrice().getAmount(),
-                item.isActive()
-        );
+        return jpaRepository.findByActiveTrue().stream().map(mapper::toDomain).toList();
     }
 }

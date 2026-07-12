@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.application.usecase.customer;
 
 import com.fiap.workshop.management.application.dto.customer.CustomerResponse;
+import com.fiap.workshop.management.application.port.in.customer.FindCustomerInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class FindCustomerUseCase {
+public class FindCustomerUseCase implements FindCustomerInputPort {
 
     private final CustomerRepository customerRepository;
 

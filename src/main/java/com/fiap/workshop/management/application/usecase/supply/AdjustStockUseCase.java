@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.supply;
 
 import com.fiap.workshop.management.application.dto.supply.StockAdjustmentCommand;
 import com.fiap.workshop.management.application.dto.supply.SupplyResponse;
+import com.fiap.workshop.management.application.port.in.supply.AdjustStockInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.supply.Supply;
 import com.fiap.workshop.management.domain.repository.SupplyRepository;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class AdjustStockUseCase {
+public class AdjustStockUseCase implements AdjustStockInputPort {
 
     private final SupplyRepository supplyRepository;
 
