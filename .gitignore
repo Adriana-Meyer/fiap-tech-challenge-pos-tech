@@ -44,3 +44,7 @@ Thumbs.db
 ### Environment ###
 .env
 *.env
+
+### Kubernetes secrets (never commit real values — see k8s/*secret.example.yaml) ###
+k8s/secret.yaml
+k8s/mysql/secret.yaml

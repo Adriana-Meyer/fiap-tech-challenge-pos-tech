@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tracking/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
 
                         // Webhooks — external integrations, authenticated via X-Webhook-Token (checked in-controller), not JWT
                         .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/**").permitAll()
