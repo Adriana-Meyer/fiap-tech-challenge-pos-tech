@@ -3,10 +3,12 @@ package com.fiap.workshop.management.interfaces.rest;
 import com.fiap.workshop.management.application.dto.customer.CreateCustomerCommand;
 import com.fiap.workshop.management.application.dto.customer.CustomerResponse;
 import com.fiap.workshop.management.application.dto.customer.UpdateCustomerCommand;
-import com.fiap.workshop.management.application.usecase.customer.CreateCustomerUseCase;
-import com.fiap.workshop.management.application.usecase.customer.DeleteCustomerUseCase;
-import com.fiap.workshop.management.application.usecase.customer.FindCustomerUseCase;
-import com.fiap.workshop.management.application.usecase.customer.UpdateCustomerUseCase;
+import com.fiap.workshop.management.application.dto.vehicle.VehicleResponse;
+import com.fiap.workshop.management.application.port.in.customer.CreateCustomerInputPort;
+import com.fiap.workshop.management.application.port.in.customer.DeleteCustomerInputPort;
+import com.fiap.workshop.management.application.port.in.customer.FindCustomerInputPort;
+import com.fiap.workshop.management.application.port.in.customer.UpdateCustomerInputPort;
+import com.fiap.workshop.management.application.port.in.vehicle.FindVehicleInputPort;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,19 +28,22 @@ import java.util.UUID;
 @RequestMapping("/api/v1/customers")
 public class CustomerController {
 
-    private final CreateCustomerUseCase createCustomerUseCase;
-    private final FindCustomerUseCase findCustomerUseCase;
-    private final UpdateCustomerUseCase updateCustomerUseCase;
-    private final DeleteCustomerUseCase deleteCustomerUseCase;
+    private final CreateCustomerInputPort createCustomerUseCase;
+    private final FindCustomerInputPort findCustomerUseCase;
+    private final UpdateCustomerInputPort updateCustomerUseCase;
+    private final DeleteCustomerInputPort deleteCustomerUseCase;
+    private final FindVehicleInputPort findVehicleUseCase;
 
-    public CustomerController(CreateCustomerUseCase createCustomerUseCase,
-                               FindCustomerUseCase findCustomerUseCase,
-                               UpdateCustomerUseCase updateCustomerUseCase,
-                               DeleteCustomerUseCase deleteCustomerUseCase) {
+    public CustomerController(CreateCustomerInputPort createCustomerUseCase,
+                               FindCustomerInputPort findCustomerUseCase,
+                               UpdateCustomerInputPort updateCustomerUseCase,
+                               DeleteCustomerInputPort deleteCustomerUseCase,
+                               FindVehicleInputPort findVehicleUseCase) {
         this.createCustomerUseCase = createCustomerUseCase;
         this.findCustomerUseCase = findCustomerUseCase;
         this.updateCustomerUseCase = updateCustomerUseCase;
         this.deleteCustomerUseCase = deleteCustomerUseCase;
+        this.findVehicleUseCase = findVehicleUseCase;
     }
 
     @PostMapping
@@ -60,6 +65,11 @@ public class CustomerController {
     @GetMapping("/document/{document}")
     public CustomerResponse findByDocument(@PathVariable String document) {
         return findCustomerUseCase.findByDocument(document);
+    }
+
+    @GetMapping("/{customerId}/vehicles")
+    public List<VehicleResponse> findVehiclesByCustomer(@PathVariable UUID customerId) {
+        return findVehicleUseCase.findByCustomerId(customerId);
     }
 
     @PutMapping("/{id}")
