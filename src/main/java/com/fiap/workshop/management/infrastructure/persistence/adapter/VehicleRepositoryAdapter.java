@@ -1,9 +1,8 @@
 package com.fiap.workshop.management.infrastructure.persistence.adapter;
 
-import com.fiap.workshop.management.domain.model.vehicle.LicensePlate;
 import com.fiap.workshop.management.domain.model.vehicle.Vehicle;
 import com.fiap.workshop.management.domain.repository.VehicleRepository;
-import com.fiap.workshop.management.infrastructure.persistence.entity.VehicleJpaEntity;
+import com.fiap.workshop.management.infrastructure.persistence.mapper.VehicleMapper;
 import com.fiap.workshop.management.infrastructure.persistence.repository.VehicleJpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,34 +14,36 @@ import java.util.UUID;
 public class VehicleRepositoryAdapter implements VehicleRepository {
 
     private final VehicleJpaRepository jpaRepository;
+    private final VehicleMapper mapper;
 
-    public VehicleRepositoryAdapter(VehicleJpaRepository jpaRepository) {
+    public VehicleRepositoryAdapter(VehicleJpaRepository jpaRepository, VehicleMapper mapper) {
         this.jpaRepository = jpaRepository;
+        this.mapper = mapper;
     }
 
     @Override
     public Vehicle save(Vehicle vehicle) {
-        return toDomain(jpaRepository.save(toEntity(vehicle)));
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(vehicle)));
     }
 
     @Override
     public Optional<Vehicle> findById(UUID id) {
-        return jpaRepository.findById(id.toString()).map(this::toDomain);
+        return jpaRepository.findById(id.toString()).map(mapper::toDomain);
     }
 
     @Override
     public Optional<Vehicle> findByPlate(String plateValue) {
-        return jpaRepository.findByPlateValue(plateValue).map(this::toDomain);
+        return jpaRepository.findByPlateValue(plateValue).map(mapper::toDomain);
     }
 
     @Override
     public List<Vehicle> findByCustomerId(UUID customerId) {
-        return jpaRepository.findByCustomerId(customerId.toString()).stream().map(this::toDomain).toList();
+        return jpaRepository.findByCustomerId(customerId.toString()).stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public List<Vehicle> findAll() {
-        return jpaRepository.findAll().stream().map(this::toDomain).toList();
+        return jpaRepository.findAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
@@ -53,29 +54,5 @@ public class VehicleRepositoryAdapter implements VehicleRepository {
     @Override
     public boolean existsByPlate(String plateValue) {
         return jpaRepository.existsByPlateValue(plateValue);
-    }
-
-    private Vehicle toDomain(VehicleJpaEntity e) {
-        return new Vehicle(
-                UUID.fromString(e.getId()),
-                new LicensePlate(e.getPlateValue()),
-                e.getBrand(),
-                e.getModel(),
-                e.getYear(),
-                e.getColor(),
-                UUID.fromString(e.getCustomerId())
-        );
-    }
-
-    private VehicleJpaEntity toEntity(Vehicle v) {
-        return new VehicleJpaEntity(
-                v.getId().toString(),
-                v.getPlate().getValue(),
-                v.getBrand(),
-                v.getModel(),
-                v.getYear(),
-                v.getColor(),
-                v.getCustomerId().toString()
-        );
     }
 }
