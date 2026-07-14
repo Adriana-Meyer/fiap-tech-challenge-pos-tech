@@ -1,0 +1,66 @@
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment-name:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment-name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment-name }}
+    concurrency:
+      group: deploy-${{ inputs.environment-name }}
+      cancel-in-progress: false
+    env:
+      TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
+      TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+      TF_VAR_webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+      TF_VAR_dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+      TF_VAR_dockerhub_password: ${{ secrets.DOCKERHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init
+
+      # Bootstrap em duas passadas: kubernetes_manifest precisa do schema OpenAPI
+      # do cluster já no plan, então o cluster precisa existir antes do resto.
+      - name: Terraform apply — bootstrap kind cluster
+        working-directory: infra
+        run: terraform apply -target=kind_cluster.workshop -auto-approve
+
+      - name: Terraform apply — full stack
+        working-directory: infra
+        run: terraform apply -auto-approve
+
+      - name: Wait for app rollout
+        run: kubectl --context kind-workshop -n workshop rollout status deployment/workshop-app --timeout=180s
+
+      - name: Verify pods & HPA
+        run: |
+          kubectl --context kind-workshop -n workshop get pods -o wide
+          kubectl --context kind-workshop -n workshop get hpa
+          kubectl --context kind-workshop top nodes || true
+
+      - name: Smoke test — /actuator/health via NodePort
+        run: |
+          curl -sf --retry 10 --retry-delay 5 --retry-connrefused \
+            http://localhost:30080/actuator/health | tee /dev/stderr | grep -q '"status":"UP"'
+
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        working-directory: infra
+        run: terraform destroy -auto-approve
