@@ -6,6 +6,33 @@ MVP de back-end para gestão de oficina mecânica — FIAP Tech Challenge (Pós-
 
 Sistema integrado para controle de ordens de serviço (OS), clientes, veículos, catálogo de serviços, peças/insumos e rastreamento público de OS. Construído com Java 17, Spring Boot 3.2, MySQL e arquitetura em camadas baseada em DDD.
 
+---
+
+## Arquitetura
+
+O projeto segue **Clean Architecture** (camadas `domain` → `application` → `infrastructure`/`interfaces`, com inversão de dependência). Visão de alto nível (C4 Model, Nível 1 — Contexto):
+
+```mermaid
+flowchart TB
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef system fill:#1168bd,stroke:#0b4884,color:#fff
+    classDef external fill:#999999,stroke:#6b6b6b,color:#fff
+
+    Cliente["Cliente<br/>[Pessoa]<br/>Consulta o status da sua OS<br/>via código público, sem login"]:::person
+    Funcionario["Funcionário da Oficina<br/>[Pessoa]<br/>Consultor, Mecânico, Estoquista ou Admin<br/>autenticado via JWT"]:::person
+    ExternoWebhook["Sistema Externo de Notificação<br/>[Sistema Externo]<br/>Confirma aprovação de orçamento e<br/>atualização de status por e-mail"]:::external
+
+    Workshop["Workshop Management System<br/>[Sistema]<br/>Gerencia clientes, veículos, ordens de<br/>serviço, catálogo e estoque de peças<br/>de uma oficina mecânica"]:::system
+
+    Cliente -- "Consulta status da OS<br/>GET /tracking/{osCode} — JSON/HTTPS" --> Workshop
+    Funcionario -- "Login, cadastros, gestão de OS e<br/>estoque — JSON/HTTPS + JWT" --> Workshop
+    ExternoWebhook -- "POST /webhooks/estimate-approval<br/>POST /webhooks/email-status-update<br/>JSON/HTTPS + X-Webhook-Token" --> Workshop
+```
+
+Diagramas C4 completos (Contexto, Containers, Componentes) e a explicação da camada de arquitetura: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+---
+
 ## Tecnologias
 
 | Camada | Tecnologia |
@@ -92,6 +119,16 @@ http://localhost:8080/swagger-ui.html
 4. Cole o token no campo **Value** (sem o prefixo `Bearer `) e clique em **Authorize**
 
 A partir daí todos os endpoints protegidos enviarão o header `Authorization: Bearer <token>` automaticamente.
+
+### Importando no Postman / Insomnia
+
+A especificação OpenAPI é gerada automaticamente em tempo de execução e pode ser importada em qualquer cliente REST, sem depender de uma collection estática mantida à parte:
+
+```
+http://localhost:8080/v3/api-docs
+```
+
+Postman: *Import → Link* · Insomnia: *Import → From URL*. Isso traz todas as rotas, schemas e exemplos já tipados, sempre em sincronia com o código.
 
 ---
 
@@ -312,3 +349,34 @@ erDiagram
 ```
 
 > **Nota:** Um `service_order_item` representa serviço **ou** peça/insumo — as FKs `service_catalog_item_id` e `supply_id` são mutuamente opcionais, com a restrição `CHECK` garantindo que ao menos uma esteja preenchida.
+
+---
+
+## Deploy e Infraestrutura
+
+Além da execução local via Docker Compose, o projeto tem uma esteira completa de containerização, orquestração e entrega contínua:
+
+- **Docker** — imagem multi-stage (build Maven + runtime `eclipse-temurin:17-jre`, usuário não-root), ver [`Dockerfile`](Dockerfile).
+- **Kubernetes** — manifests em [`k8s/`](k8s/), organizados em estágios ordenados (`00-namespace` → `01-config` → `02-mysql` → `03-app`), incluindo HPA (1–5 réplicas, CPU/memória 70%).
+- **Terraform** — provisionamento declarativo em [`infra/`](infra/): cria um cluster **kind** (`tehcyx/kind`) e aplica os manifests de `k8s/` via `kubernetes_manifest` (`hashicorp/kubernetes`), lendo os arquivos reais sem duplicar YAML.
+- **CI/CD** — GitHub Actions ([`.github/workflows/`](.github/workflows/)): build + testes (gate JaCoCo 80%) em todo push/PR; build & push de imagem no push para `develop`/`main`; deploy automatizado nos ambientes `homologacao` (branch `develop`) e `producao` (branch `main`), cada um provisionando um cluster kind efêmero dentro do próprio runner e destruindo-o ao final.
+
+### Rodando a infraestrutura localmente
+
+```bash
+cd infra
+terraform init
+
+# Bootstrap: o provider kubernetes precisa do cluster já existindo
+# para ler o schema OpenAPI no plan — por isso duas passadas:
+terraform apply -target=kind_cluster.workshop
+terraform apply
+
+curl http://localhost:30080/actuator/health
+
+terraform destroy
+```
+
+> As variáveis sensíveis (`mysql_root_password`, `mysql_password`, `jwt_secret`, `webhook_token`, `dockerhub_username`, `dockerhub_password`) não têm valor padrão — defina-as via `TF_VAR_<nome>` no ambiente antes do `terraform apply`. Os arquivos `k8s/*.example` servem apenas de referência caso os secrets sejam aplicados manualmente com `kubectl`, fora do fluxo Terraform.
+
+Diagrama de infraestrutura, detalhamento do pipeline de CI/CD e o passo a passo completo: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
