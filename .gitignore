@@ -44,3 +44,10 @@ Thumbs.db
 ### Environment ###
 .env
 *.env
+
+### Terraform (state and provider binaries are never committed — K8s secrets are now created by Terraform via TF_VAR_*, see infra/secrets.tf) ###
+infra/.terraform/
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/*.tfplan
+infra/workshop-config

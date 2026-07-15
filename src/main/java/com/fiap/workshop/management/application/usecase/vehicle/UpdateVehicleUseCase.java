@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.vehicle;
 
 import com.fiap.workshop.management.application.dto.vehicle.UpdateVehicleCommand;
 import com.fiap.workshop.management.application.dto.vehicle.VehicleResponse;
+import com.fiap.workshop.management.application.port.in.vehicle.UpdateVehicleInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.vehicle.Vehicle;
 import com.fiap.workshop.management.domain.repository.VehicleRepository;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class UpdateVehicleUseCase {
+public class UpdateVehicleUseCase implements UpdateVehicleInputPort {
 
     private final VehicleRepository vehicleRepository;
 

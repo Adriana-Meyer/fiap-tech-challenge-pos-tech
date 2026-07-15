@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.application.usecase.vehicle;
 
 import com.fiap.workshop.management.application.dto.vehicle.VehicleResponse;
+import com.fiap.workshop.management.application.port.in.vehicle.FindVehicleInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.vehicle.LicensePlate;
 import com.fiap.workshop.management.domain.repository.VehicleRepository;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class FindVehicleUseCase {
+public class FindVehicleUseCase implements FindVehicleInputPort {
 
     private final VehicleRepository vehicleRepository;
 

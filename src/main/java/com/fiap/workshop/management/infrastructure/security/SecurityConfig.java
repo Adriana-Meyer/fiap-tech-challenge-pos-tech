@@ -40,12 +40,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tracking/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
+
+                        // Webhooks — external integrations, authenticated via X-Webhook-Token (checked in-controller), not JWT
+                        .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/**").permitAll()
 
                         // Analytics — declared before the general GET /service-orders/** rule
                         .requestMatchers(HttpMethod.GET, "/api/v1/service-orders/analytics/**").hasRole("ADMIN")
 
                         // Service Orders
                         .requestMatchers(HttpMethod.POST, "/api/v1/service-orders").hasAnyRole("CONSULTANT", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/service-orders/full").hasAnyRole("CONSULTANT", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/service-orders").hasAnyRole("CONSULTANT", "MECHANIC", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/service-orders/**").hasAnyRole("CONSULTANT", "MECHANIC", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/service-orders/*/items").hasAnyRole("MECHANIC", "CONSULTANT", "ADMIN")

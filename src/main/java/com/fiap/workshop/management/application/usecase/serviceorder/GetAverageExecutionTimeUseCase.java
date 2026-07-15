@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.AverageExecutionTimeResponse;
+import com.fiap.workshop.management.application.port.in.serviceorder.GetAverageExecutionTimeInputPort;
 import com.fiap.workshop.management.domain.model.catalog.ServiceCatalogItem;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrderItem;
 import com.fiap.workshop.management.domain.repository.ServiceOrderRepository;
@@ -14,7 +15,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class GetAverageExecutionTimeUseCase {
+public class GetAverageExecutionTimeUseCase implements GetAverageExecutionTimeInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
 

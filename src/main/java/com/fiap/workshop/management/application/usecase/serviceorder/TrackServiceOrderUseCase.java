@@ -1,13 +1,14 @@
 package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderTrackingResponse;
+import com.fiap.workshop.management.application.port.in.serviceorder.TrackServiceOrderInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.repository.ServiceOrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class TrackServiceOrderUseCase {
+public class TrackServiceOrderUseCase implements TrackServiceOrderInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
 

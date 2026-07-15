@@ -1,5 +1,6 @@
 package com.fiap.workshop.management.application.usecase.customer;
 
+import com.fiap.workshop.management.application.port.in.customer.DeleteCustomerInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceInUseException;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.repository.CustomerRepository;
@@ -10,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class DeleteCustomerUseCase {
+public class DeleteCustomerUseCase implements DeleteCustomerInputPort {
 
     private final CustomerRepository customerRepository;
     private final VehicleRepository vehicleRepository;

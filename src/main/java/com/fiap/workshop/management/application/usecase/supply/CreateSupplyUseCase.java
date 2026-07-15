@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.supply;
 
 import com.fiap.workshop.management.application.dto.supply.SupplyResponse;
 import com.fiap.workshop.management.application.dto.supply.UpsertSupplyCommand;
+import com.fiap.workshop.management.application.port.in.supply.CreateSupplyInputPort;
 import com.fiap.workshop.management.domain.exception.DuplicateResourceException;
 import com.fiap.workshop.management.domain.model.shared.Money;
 import com.fiap.workshop.management.domain.model.supply.Supply;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class CreateSupplyUseCase {
+public class CreateSupplyUseCase implements CreateSupplyInputPort {
 
     private final SupplyRepository supplyRepository;
 

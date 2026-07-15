@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.vehicle;
 
 import com.fiap.workshop.management.application.dto.vehicle.RegisterVehicleCommand;
 import com.fiap.workshop.management.application.dto.vehicle.VehicleResponse;
+import com.fiap.workshop.management.application.port.in.vehicle.RegisterVehicleInputPort;
 import com.fiap.workshop.management.domain.exception.DuplicateResourceException;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.vehicle.LicensePlate;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class RegisterVehicleUseCase {
+public class RegisterVehicleUseCase implements RegisterVehicleInputPort {
 
     private final VehicleRepository vehicleRepository;
     private final CustomerRepository customerRepository;

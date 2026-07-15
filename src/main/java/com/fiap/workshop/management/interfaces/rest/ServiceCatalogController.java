@@ -2,10 +2,10 @@ package com.fiap.workshop.management.interfaces.rest;
 
 import com.fiap.workshop.management.application.dto.catalog.ServiceCatalogItemResponse;
 import com.fiap.workshop.management.application.dto.catalog.UpsertServiceCatalogItemCommand;
-import com.fiap.workshop.management.application.usecase.catalog.CreateServiceCatalogItemUseCase;
-import com.fiap.workshop.management.application.usecase.catalog.DeleteServiceCatalogItemUseCase;
-import com.fiap.workshop.management.application.usecase.catalog.FindServiceCatalogItemUseCase;
-import com.fiap.workshop.management.application.usecase.catalog.UpdateServiceCatalogItemUseCase;
+import com.fiap.workshop.management.application.port.in.catalog.CreateServiceCatalogItemInputPort;
+import com.fiap.workshop.management.application.port.in.catalog.DeleteServiceCatalogItemInputPort;
+import com.fiap.workshop.management.application.port.in.catalog.FindServiceCatalogItemInputPort;
+import com.fiap.workshop.management.application.port.in.catalog.UpdateServiceCatalogItemInputPort;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,15 +26,15 @@ import java.util.UUID;
 @RequestMapping("/api/v1/services")
 public class ServiceCatalogController {
 
-    private final CreateServiceCatalogItemUseCase createUseCase;
-    private final FindServiceCatalogItemUseCase findUseCase;
-    private final UpdateServiceCatalogItemUseCase updateUseCase;
-    private final DeleteServiceCatalogItemUseCase deleteUseCase;
+    private final CreateServiceCatalogItemInputPort createUseCase;
+    private final FindServiceCatalogItemInputPort findUseCase;
+    private final UpdateServiceCatalogItemInputPort updateUseCase;
+    private final DeleteServiceCatalogItemInputPort deleteUseCase;
 
-    public ServiceCatalogController(CreateServiceCatalogItemUseCase createUseCase,
-                                     FindServiceCatalogItemUseCase findUseCase,
-                                     UpdateServiceCatalogItemUseCase updateUseCase,
-                                     DeleteServiceCatalogItemUseCase deleteUseCase) {
+    public ServiceCatalogController(CreateServiceCatalogItemInputPort createUseCase,
+                                     FindServiceCatalogItemInputPort findUseCase,
+                                     UpdateServiceCatalogItemInputPort updateUseCase,
+                                     DeleteServiceCatalogItemInputPort deleteUseCase) {
         this.createUseCase = createUseCase;
         this.findUseCase = findUseCase;
         this.updateUseCase = updateUseCase;

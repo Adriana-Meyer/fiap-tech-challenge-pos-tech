@@ -1,0 +1,79 @@
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment-name:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment-name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment-name }}
+    concurrency:
+      group: deploy-${{ inputs.environment-name }}
+      cancel-in-progress: false
+    env:
+      TF_VAR_mysql_root_password: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      TF_VAR_mysql_password: ${{ secrets.MYSQL_PASSWORD }}
+      TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+      TF_VAR_webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+      TF_VAR_dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+      TF_VAR_dockerhub_password: ${{ secrets.DOCKERHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init
+
+      # Bootstrap em duas passadas: kubernetes_manifest precisa do schema OpenAPI
+      # do cluster já no plan, então o cluster precisa existir antes do resto.
+      - name: Terraform apply — bootstrap kind cluster
+        working-directory: infra
+        run: terraform apply -target=kind_cluster.workshop -auto-approve
+
+      - name: Terraform apply — full stack
+        working-directory: infra
+        run: terraform apply -auto-approve
+
+      # kubectl rollout status espera um número fixo de réplicas — mas o HPA já
+      # começa a escalar o Deployment assim que o primeiro pod sobe (a memória
+      # costuma passar de 70% quase de imediato), o que reinicia a contagem do
+      # rollout a cada ajuste e pode estourar o timeout num runner com menos
+      # CPU/memória. Basta 1 pod pronto pra provar que a app subiu; esperamos
+      # o pod existir antes de chamar `kubectl wait` (que, sem nenhum pod pra
+      # combinar com o seletor, retorna sucesso imediato sem esperar nada).
+      - name: Wait for app rollout
+        run: |
+          for _ in $(seq 1 24); do
+            count=$(kubectl --context kind-workshop -n workshop get pods -l app=workshop-app --no-headers 2>/dev/null | wc -l)
+            [ "$count" -gt 0 ] && break
+            sleep 5
+          done
+          kubectl --context kind-workshop -n workshop wait --for=condition=ready pod -l app=workshop-app --timeout=150s
+
+      - name: Verify pods & HPA
+        run: |
+          kubectl --context kind-workshop -n workshop get pods -o wide
+          kubectl --context kind-workshop -n workshop get hpa
+          kubectl --context kind-workshop top nodes || true
+
+      - name: Smoke test — /actuator/health via NodePort
+        run: |
+          curl -sf --retry 10 --retry-delay 5 --retry-connrefused \
+            http://localhost:30080/actuator/health | tee /dev/stderr | grep -q '"status":"UP"'
+
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        working-directory: infra
+        run: terraform destroy -auto-approve

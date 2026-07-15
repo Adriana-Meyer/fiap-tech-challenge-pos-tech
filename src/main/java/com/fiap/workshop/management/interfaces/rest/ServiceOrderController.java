@@ -6,18 +6,20 @@ import com.fiap.workshop.management.application.dto.serviceorder.CompleteDiagnos
 import com.fiap.workshop.management.application.dto.serviceorder.CreateServiceOrderCommand;
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderResponse;
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderSummaryResponse;
-import com.fiap.workshop.management.application.usecase.serviceorder.AddItemToServiceOrderUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.ApproveEstimateUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.CompleteDiagnosisUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.CreateServiceOrderUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.DeliverServiceOrderUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.FinishServiceItemExecutionUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.FindServiceOrderUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.GetAverageExecutionTimeUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.RejectEstimateUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.RemoveItemFromServiceOrderUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.StartDiagnosisUseCase;
-import com.fiap.workshop.management.application.usecase.serviceorder.StartServiceItemExecutionUseCase;
+import com.fiap.workshop.management.application.port.in.serviceorder.AddItemToServiceOrderInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.ApproveEstimateInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.CompleteDiagnosisInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.CreateServiceOrderInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.DeliverServiceOrderInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.FindServiceOrderInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.FinishServiceItemExecutionInputPort;
+import com.fiap.workshop.management.application.dto.serviceorder.OpenFullServiceOrderCommand;
+import com.fiap.workshop.management.application.port.in.serviceorder.GetAverageExecutionTimeInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.OpenFullServiceOrderInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.RejectEstimateInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.RemoveItemFromServiceOrderInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.StartDiagnosisInputPort;
+import com.fiap.workshop.management.application.port.in.serviceorder.StartServiceItemExecutionInputPort;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,31 +40,33 @@ import java.util.UUID;
 @RequestMapping("/api/v1/service-orders")
 public class ServiceOrderController {
 
-    private final CreateServiceOrderUseCase createUseCase;
-    private final FindServiceOrderUseCase findUseCase;
-    private final StartDiagnosisUseCase startDiagnosisUseCase;
-    private final AddItemToServiceOrderUseCase addItemUseCase;
-    private final RemoveItemFromServiceOrderUseCase removeItemUseCase;
-    private final CompleteDiagnosisUseCase completeDiagnosisUseCase;
-    private final ApproveEstimateUseCase approveEstimateUseCase;
-    private final RejectEstimateUseCase rejectEstimateUseCase;
-    private final StartServiceItemExecutionUseCase startItemUseCase;
-    private final FinishServiceItemExecutionUseCase finishItemUseCase;
-    private final DeliverServiceOrderUseCase deliverUseCase;
-    private final GetAverageExecutionTimeUseCase avgExecutionTimeUseCase;
+    private final CreateServiceOrderInputPort createUseCase;
+    private final FindServiceOrderInputPort findUseCase;
+    private final StartDiagnosisInputPort startDiagnosisUseCase;
+    private final AddItemToServiceOrderInputPort addItemUseCase;
+    private final RemoveItemFromServiceOrderInputPort removeItemUseCase;
+    private final CompleteDiagnosisInputPort completeDiagnosisUseCase;
+    private final ApproveEstimateInputPort approveEstimateUseCase;
+    private final RejectEstimateInputPort rejectEstimateUseCase;
+    private final StartServiceItemExecutionInputPort startItemUseCase;
+    private final FinishServiceItemExecutionInputPort finishItemUseCase;
+    private final DeliverServiceOrderInputPort deliverUseCase;
+    private final GetAverageExecutionTimeInputPort avgExecutionTimeUseCase;
+    private final OpenFullServiceOrderInputPort openFullUseCase;
 
-    public ServiceOrderController(CreateServiceOrderUseCase createUseCase,
-                                   FindServiceOrderUseCase findUseCase,
-                                   StartDiagnosisUseCase startDiagnosisUseCase,
-                                   AddItemToServiceOrderUseCase addItemUseCase,
-                                   RemoveItemFromServiceOrderUseCase removeItemUseCase,
-                                   CompleteDiagnosisUseCase completeDiagnosisUseCase,
-                                   ApproveEstimateUseCase approveEstimateUseCase,
-                                   RejectEstimateUseCase rejectEstimateUseCase,
-                                   StartServiceItemExecutionUseCase startItemUseCase,
-                                   FinishServiceItemExecutionUseCase finishItemUseCase,
-                                   DeliverServiceOrderUseCase deliverUseCase,
-                                   GetAverageExecutionTimeUseCase avgExecutionTimeUseCase) {
+    public ServiceOrderController(CreateServiceOrderInputPort createUseCase,
+                                   FindServiceOrderInputPort findUseCase,
+                                   StartDiagnosisInputPort startDiagnosisUseCase,
+                                   AddItemToServiceOrderInputPort addItemUseCase,
+                                   RemoveItemFromServiceOrderInputPort removeItemUseCase,
+                                   CompleteDiagnosisInputPort completeDiagnosisUseCase,
+                                   ApproveEstimateInputPort approveEstimateUseCase,
+                                   RejectEstimateInputPort rejectEstimateUseCase,
+                                   StartServiceItemExecutionInputPort startItemUseCase,
+                                   FinishServiceItemExecutionInputPort finishItemUseCase,
+                                   DeliverServiceOrderInputPort deliverUseCase,
+                                   GetAverageExecutionTimeInputPort avgExecutionTimeUseCase,
+                                   OpenFullServiceOrderInputPort openFullUseCase) {
         this.createUseCase = createUseCase;
         this.findUseCase = findUseCase;
         this.startDiagnosisUseCase = startDiagnosisUseCase;
@@ -74,6 +79,7 @@ public class ServiceOrderController {
         this.finishItemUseCase = finishItemUseCase;
         this.deliverUseCase = deliverUseCase;
         this.avgExecutionTimeUseCase = avgExecutionTimeUseCase;
+        this.openFullUseCase = openFullUseCase;
     }
 
     @PostMapping
@@ -82,9 +88,16 @@ public class ServiceOrderController {
         return createUseCase.execute(command);
     }
 
+    @PostMapping("/full")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ServiceOrderResponse openFull(@Valid @RequestBody OpenFullServiceOrderCommand command) {
+        return openFullUseCase.execute(command);
+    }
+
     @GetMapping
-    public List<ServiceOrderSummaryResponse> findAll() {
-        return findUseCase.findAll();
+    public List<ServiceOrderSummaryResponse> findAll(
+            @RequestParam(defaultValue = "false") boolean includeCompleted) {
+        return findUseCase.findAll(includeCompleted);
     }
 
     @GetMapping("/{id}")

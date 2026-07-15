@@ -27,6 +27,18 @@ app:
   jwt:
     secret: ${JWT_SECRET:dev-only-secret-must-be-at-least-64-characters-long-for-hs512-ok}
     expiration-ms: 86400000
+  webhook:
+    token: ${WEBHOOK_TOKEN:dev-only-webhook-token-change-me}
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 springdoc:
   api-docs:

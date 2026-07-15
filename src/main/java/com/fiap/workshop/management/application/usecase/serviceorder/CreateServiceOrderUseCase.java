@@ -2,6 +2,7 @@ package com.fiap.workshop.management.application.usecase.serviceorder;
 
 import com.fiap.workshop.management.application.dto.serviceorder.CreateServiceOrderCommand;
 import com.fiap.workshop.management.application.dto.serviceorder.ServiceOrderResponse;
+import com.fiap.workshop.management.application.port.in.serviceorder.CreateServiceOrderInputPort;
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrder;
 import com.fiap.workshop.management.domain.repository.CustomerRepository;
@@ -14,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 @Service
-public class CreateServiceOrderUseCase {
+public class CreateServiceOrderUseCase implements CreateServiceOrderInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
     private final CustomerRepository customerRepository;
