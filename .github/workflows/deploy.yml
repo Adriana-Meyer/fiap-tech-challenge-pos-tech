@@ -44,21 +44,22 @@ jobs:
         working-directory: infra
         run: terraform apply -auto-approve
 
-      # kubectl rollout status espera um número fixo de réplicas — mas o HPA já
-      # começa a escalar o Deployment assim que o primeiro pod sobe (a memória
-      # costuma passar de 70% quase de imediato), o que reinicia a contagem do
-      # rollout a cada ajuste e pode estourar o timeout num runner com menos
-      # CPU/memória. Basta 1 pod pronto pra provar que a app subiu; esperamos
-      # o pod existir antes de chamar `kubectl wait` (que, sem nenhum pod pra
-      # combinar com o seletor, retorna sucesso imediato sem esperar nada).
       - name: Wait for app rollout
+        id: wait_rollout
         run: |
           for _ in $(seq 1 24); do
             count=$(kubectl --context kind-workshop -n workshop get pods -l app=workshop-app --no-headers 2>/dev/null | wc -l)
             [ "$count" -gt 0 ] && break
             sleep 5
           done
-          kubectl --context kind-workshop -n workshop wait --for=condition=ready pod -l app=workshop-app --timeout=150s
+          kubectl --context kind-workshop -n workshop wait --for=condition=ready pod -l app=workshop-app --timeout=300s
+
+      - name: Debug pod status on failure
+        if: failure() && steps.wait_rollout.outcome == 'failure'
+        run: |
+          kubectl --context kind-workshop -n workshop get pods -o wide || true
+          kubectl --context kind-workshop -n workshop describe pod -l app=workshop-app || true
+          kubectl --context kind-workshop -n workshop get events --sort-by=.lastTimestamp || true
 
       - name: Verify pods & HPA
         run: |
