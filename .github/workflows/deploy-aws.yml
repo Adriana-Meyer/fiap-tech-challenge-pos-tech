@@ -4,9 +4,9 @@ name: Deploy to AWS (EKS + RDS)
 # not always up — they get destroyed between AWS Academy sessions to
 # save budget — so this can't safely run on every push yet. The
 # existing kind-based deploy-hml/deploy-prod jobs in ci-cd.yml keep
-# validating every push for free, independent of the AWS Lab session.
+# validating every push for now, independent of the AWS Lab session.
 # This becomes the automatic production deploy later, closer to
-# delivery (see the Fase 3 plan's sequencing).
+# project delivery.
 on:
   workflow_dispatch:
     inputs:
