@@ -38,11 +38,14 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private static final String ADMIN_CPF = "98765432100";
+    private static final String NONEXISTENT_CPF = "12345678909";
+
     @BeforeAll
     void setUpUser() {
         userJpaRepository.save(new UserJpaEntity(
                 UUID.randomUUID().toString(),
-                "auth-admin@test.com",
+                ADMIN_CPF,
                 passwordEncoder.encode("password123"),
                 "ROLE_ADMIN",
                 true));
@@ -54,7 +57,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new AuthRequest("auth-admin@test.com", "password123"))))
+                                new AuthRequest(ADMIN_CPF, "password123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token", not(emptyOrNullString())));
     }
@@ -65,7 +68,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new AuthRequest("auth-admin@test.com", "wrongpass"))))
+                                new AuthRequest(ADMIN_CPF, "wrongpass"))))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -75,7 +78,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new AuthRequest("nobody@test.com", "password123"))))
+                                new AuthRequest(NONEXISTENT_CPF, "password123"))))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -89,17 +92,17 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("should return 200 when accessing protected endpoint with valid token")
     void shouldReturn200WhenAccessingProtectedEndpointWithValidToken() throws Exception {
-        String token = loginAndGetToken("auth-admin@test.com", "password123");
+        String token = loginAndGetToken(ADMIN_CPF, "password123");
 
         mockMvc.perform(get("/api/v1/service-orders")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
     }
 
-    private String loginAndGetToken(String email, String password) throws Exception {
+    private String loginAndGetToken(String cpf, String password) throws Exception {
         String response = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AuthRequest(email, password))))
+                        .content(objectMapper.writeValueAsString(new AuthRequest(cpf, password))))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(response).get("token").asText();
     }
