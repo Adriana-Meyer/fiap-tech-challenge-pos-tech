@@ -1,0 +1,100 @@
+name: Deploy to AWS (EKS + RDS)
+
+# Manual only for now. The EKS cluster (Repo 2) and RDS (Repo 3) are
+# not always up — they get destroyed between AWS Academy sessions to
+# save budget — so this can't safely run on every push yet. The
+# existing kind-based deploy-hml/deploy-prod jobs in ci-cd.yml keep
+# validating every push for now, independent of the AWS Lab session.
+# This becomes the automatic production deploy later, closer to
+# project delivery.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'homologacao'
+        type: choice
+        options:
+          - homologacao
+          - producao
+
+jobs:
+  deploy:
+    name: Deploy to EKS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ github.event.inputs.environment }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      AWS_REGION: us-east-1
+      EKS_CLUSTER_NAME: tech-challenge-eks
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl for the EKS cluster
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
+
+      - name: Apply namespace and app config
+        run: |
+          kubectl apply -f k8s/00-namespace/namespace.yaml
+          kubectl apply -f k8s/01-config/app-configmap.yaml
+
+      - name: Create/update app secret (RDS connection, JWT, webhook)
+        run: |
+          kubectl create secret generic app-secret \
+            --namespace workshop \
+            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=WEBHOOK_TOKEN="${{ secrets.WEBHOOK_TOKEN }}" \
+            --from-literal=SPRING_DATASOURCE_URL="${{ secrets.RDS_DATASOURCE_URL }}" \
+            --from-literal=SPRING_DATASOURCE_USERNAME="${{ secrets.RDS_USERNAME }}" \
+            --from-literal=SPRING_DATASOURCE_PASSWORD="${{ secrets.RDS_PASSWORD }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create/update Docker Hub image pull secret
+        run: |
+          kubectl create secret docker-registry dockerhub-secret \
+            --namespace workshop \
+            --docker-username="${{ secrets.DOCKERHUB_USERNAME }}" \
+            --docker-password="${{ secrets.DOCKERHUB_TOKEN }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # Intentionally skips k8s/02-mysql and k8s/01-config/mysql-configmap.yaml
+      # (database is the RDS instance from Repo 3) and uses
+      # service-loadbalancer.yaml instead of the kind-only service.yaml.
+      - name: Deploy app
+        run: |
+          kubectl apply -f k8s/03-app/deployment.yaml
+          kubectl apply -f k8s/03-app/hpa.yaml
+          kubectl apply -f k8s/03-app/service-loadbalancer.yaml
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/workshop-app -n workshop --timeout=300s
+
+      - name: Wait for LoadBalancer hostname
+        id: lb
+        run: |
+          for i in $(seq 1 30); do
+            HOST=$(kubectl get svc workshop-app -n workshop -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "$HOST" ]; then
+              echo "host=$HOST" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for LoadBalancer hostname" >&2
+          exit 1
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf "http://${{ steps.lb.outputs.host }}/actuator/health" | grep -q '"status":"UP"'; then
+              echo "App is UP"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "App did not become healthy in time" >&2
+          exit 1
