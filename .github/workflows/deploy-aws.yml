@@ -62,13 +62,15 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
       # Intentionally skips k8s/02-mysql and k8s/01-config/mysql-configmap.yaml
-      # (database is the RDS instance from Repo 3) and uses
-      # service-loadbalancer.yaml instead of the kind-only service.yaml.
+      # (database is the RDS instance from Repo 3). k8s/aws/ holds the
+      # manifests specific to this path, kept outside 00-namespace/
+      # 01-config/02-mysql/03-app so the kind pipeline's infra/manifests.tf
+      # (which globs every *.yaml in those 4 folders) never picks them up.
       - name: Deploy app
         run: |
           kubectl apply -f k8s/03-app/deployment.yaml
           kubectl apply -f k8s/03-app/hpa.yaml
-          kubectl apply -f k8s/03-app/service-loadbalancer.yaml
+          kubectl apply -f k8s/aws/service-loadbalancer.yaml
 
       - name: Wait for rollout
         run: kubectl rollout status deployment/workshop-app -n workshop --timeout=300s
