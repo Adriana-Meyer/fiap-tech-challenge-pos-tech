@@ -6,6 +6,10 @@ kind: Service
 metadata:
   name: workshop-app
   namespace: workshop
+  annotations:
+    # Without this, EKS's legacy in-tree AWS cloud provider defaults to
+    # a Classic Load Balancer instead of an NLB.
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
 spec:
   type: LoadBalancer
   selector:
