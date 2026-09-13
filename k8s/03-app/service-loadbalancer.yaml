@@ -1,0 +1,15 @@
+# Used only by the real AWS deploy (see .github/workflows/deploy-aws.yml).
+# The kind-based local/CI pipeline keeps using service.yaml (NodePort) —
+# kind has no cloud load balancer controller to satisfy this type.
+apiVersion: v1
+kind: Service
+metadata:
+  name: workshop-app
+  namespace: workshop
+spec:
+  type: LoadBalancer
+  selector:
+    app: workshop-app
+  ports:
+    - port: 80
+      targetPort: 8080
