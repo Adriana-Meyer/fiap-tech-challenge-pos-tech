@@ -156,3 +156,15 @@ terraform destroy
 - As 6 variáveis sensíveis (`mysql_root_password`, `mysql_password`, `jwt_secret`, `webhook_token`, `dockerhub_username`, `dockerhub_password`) não têm valor default no `variables.tf` — precisam ser fornecidas via `TF_VAR_<nome>` no ambiente, tanto localmente quanto no pipeline (onde vêm dos GitHub Actions Secrets do repositório).
 - `k8s/secret.yaml.example` e `k8s/mysql-secret.yaml.example` são só templates de referência (valores `CHANGE_ME`) — documentam a estrutura esperada caso alguém precise criar um Secret manualmente via `kubectl`, mas não são lidos pelo Terraform nem aplicados automaticamente.
 - `infra/.terraform/` e `infra/terraform.tfstate*` estão no `.gitignore` — o state do Terraform armazena os valores dos secrets em texto plano, então nunca é commitado.
+
+## Deploy real na AWS (Fase 3)
+
+Além da simulação local com kind (acima, mantida por ora para validar manifests e economizar sessão/orçamento do AWS Academy — ver [ADRs do projeto](.)), existe um segundo caminho de deploy contra a infraestrutura real provisionada nos Repositórios [2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) (EKS) e [3](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure) (RDS): o workflow **`deploy-aws.yml`**, disparado manualmente (`workflow_dispatch`).
+
+Diferenças em relação ao caminho kind:
+- Não roda Terraform neste repositório — só `aws eks update-kubeconfig` + `kubectl apply`, contra um cluster que os Repositórios 2/3 já provisionaram.
+- Não aplica `k8s/02-mysql/*` nem `k8s/01-config/mysql-configmap.yaml` — o banco é o RDS do Repositório 3.
+- Usa `k8s/03-app/service-loadbalancer.yaml` (Service `LoadBalancer`) em vez de `k8s/03-app/service.yaml` (NodePort, específico do kind).
+- O Secret `app-secret` é criado via `kubectl create secret generic` a partir de GitHub Secrets, incluindo `SPRING_DATASOURCE_URL`/`_USERNAME`/`_PASSWORD` apontando para o RDS — ver [`k8s/secret-aws.yaml.example`](../k8s/secret-aws.yaml.example) para a estrutura esperada. Os valores de `RDS_DATASOURCE_URL`/`RDS_USERNAME`/`RDS_PASSWORD` são copiados manualmente do `terraform output` do Repositório 3, mesmo padrão manual já usado para os outros secrets.
+
+Fica manual (`workflow_dispatch`) enquanto a infraestrutura ainda está em desenvolvimento — passa a rodar automaticamente no push para `main` mais perto da entrega final do projeto, quando o pipeline kind for descontinuado.
