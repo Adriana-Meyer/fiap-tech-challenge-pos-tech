@@ -1,6 +1,7 @@
 package com.fiap.workshop.management.domain.model.customer;
 
 import com.fiap.workshop.management.domain.exception.InvalidDocumentException;
+import com.fiap.workshop.management.domain.model.shared.CpfValidator;
 
 import java.util.Objects;
 
@@ -43,21 +44,7 @@ public final class Document {
     }
 
     private static void validateCpf(String digits) {
-        if (digits.chars().distinct().count() == 1) throw new InvalidDocumentException(digits);
-
-        int sum = 0;
-        for (int i = 0; i < 9; i++) sum += (digits.charAt(i) - '0') * (10 - i);
-        int first = 11 - (sum % 11);
-        if (first >= 10) first = 0;
-
-        sum = 0;
-        for (int i = 0; i < 10; i++) sum += (digits.charAt(i) - '0') * (11 - i);
-        int second = 11 - (sum % 11);
-        if (second >= 10) second = 0;
-
-        if (first != (digits.charAt(9) - '0') || second != (digits.charAt(10) - '0')) {
-            throw new InvalidDocumentException(digits);
-        }
+        if (!CpfValidator.isValid(digits)) throw new InvalidDocumentException(digits);
     }
 
     private static void validateCnpj(String digits) {

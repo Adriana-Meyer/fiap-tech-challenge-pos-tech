@@ -19,8 +19,8 @@ public class UserJpaEntity implements UserDetails {
     @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private String id;
 
-    @Column(name = "email", length = 255, nullable = false, unique = true)
-    private String email;
+    @Column(name = "cpf", length = 11, nullable = false, unique = true)
+    private String cpf;
 
     @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
@@ -33,9 +33,9 @@ public class UserJpaEntity implements UserDetails {
 
     protected UserJpaEntity() {}
 
-    public UserJpaEntity(String id, String email, String passwordHash, String role, boolean active) {
+    public UserJpaEntity(String id, String cpf, String passwordHash, String role, boolean active) {
         this.id = id;
-        this.email = email;
+        this.cpf = cpf;
         this.passwordHash = passwordHash;
         this.role = role;
         this.active = active;
@@ -53,7 +53,7 @@ public class UserJpaEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return cpf;
     }
 
     @Override

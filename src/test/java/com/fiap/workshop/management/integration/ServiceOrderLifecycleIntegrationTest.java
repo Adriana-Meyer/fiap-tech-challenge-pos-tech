@@ -51,23 +51,26 @@ class ServiceOrderLifecycleIntegrationTest extends BaseIntegrationTest {
     private UUID catalogItemId;
     private UUID supplyId;
 
+    private static final String ADMIN_CPF = "55544433380";
+    private static final String MECHANIC_CPF = "66633399901";
+
     @BeforeAll
     void setUpReferenceData() throws Exception {
         userJpaRepository.save(new UserJpaEntity(
                 UUID.randomUUID().toString(),
-                "lifecycle-admin@test.com",
+                ADMIN_CPF,
                 passwordEncoder.encode("pass123"),
                 "ROLE_ADMIN",
                 true));
         userJpaRepository.save(new UserJpaEntity(
                 UUID.randomUUID().toString(),
-                "lifecycle-mechanic@test.com",
+                MECHANIC_CPF,
                 passwordEncoder.encode("pass123"),
                 "ROLE_MECHANIC",
                 true));
 
-        adminToken = loginAndGetToken("lifecycle-admin@test.com", "pass123");
-        mechanicToken = loginAndGetToken("lifecycle-mechanic@test.com", "pass123");
+        adminToken = loginAndGetToken(ADMIN_CPF, "pass123");
+        mechanicToken = loginAndGetToken(MECHANIC_CPF, "pass123");
 
         customerId = createCustomer();
         vehicleId = createVehicle(customerId);
@@ -270,10 +273,10 @@ class ServiceOrderLifecycleIntegrationTest extends BaseIntegrationTest {
                 .header("Authorization", "Bearer " + token));
     }
 
-    private String loginAndGetToken(String email, String password) throws Exception {
+    private String loginAndGetToken(String cpf, String password) throws Exception {
         String response = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AuthRequest(email, password))))
+                        .content(objectMapper.writeValueAsString(new AuthRequest(cpf, password))))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(response).get("token").asText();
     }
