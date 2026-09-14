@@ -5,18 +5,23 @@ import com.fiap.workshop.management.application.port.in.serviceorder.DeliverServ
 import com.fiap.workshop.management.domain.exception.ResourceNotFoundException;
 import com.fiap.workshop.management.domain.model.serviceorder.ServiceOrder;
 import com.fiap.workshop.management.domain.repository.ServiceOrderRepository;
+import com.fiap.workshop.management.domain.service.MetricsPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Service
 public class DeliverServiceOrderUseCase implements DeliverServiceOrderInputPort {
 
     private final ServiceOrderRepository serviceOrderRepository;
+    private final MetricsPublisher metricsPublisher;
 
-    public DeliverServiceOrderUseCase(ServiceOrderRepository serviceOrderRepository) {
+    public DeliverServiceOrderUseCase(ServiceOrderRepository serviceOrderRepository,
+                                       MetricsPublisher metricsPublisher) {
         this.serviceOrderRepository = serviceOrderRepository;
+        this.metricsPublisher = metricsPublisher;
     }
 
     @Transactional
@@ -24,6 +29,8 @@ public class DeliverServiceOrderUseCase implements DeliverServiceOrderInputPort 
         ServiceOrder order = serviceOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceOrder", id));
         order.deliver();
+        metricsPublisher.recordServiceOrderStatusDuration(order.getId(), "FINALIZATION",
+                Duration.between(order.getExecutionFinishedAt(), order.getDeliveredAt()).toMinutes());
         return ServiceOrderResponse.from(serviceOrderRepository.save(order));
     }
 }

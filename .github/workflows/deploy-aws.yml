@@ -42,7 +42,7 @@ jobs:
           kubectl apply -f k8s/00-namespace/namespace.yaml
           kubectl apply -f k8s/01-config/app-configmap.yaml
 
-      - name: Create/update app secret (RDS connection, JWT, webhook)
+      - name: Create/update app secret (RDS connection, JWT, webhook, New Relic)
         run: |
           kubectl create secret generic app-secret \
             --namespace workshop \
@@ -51,6 +51,7 @@ jobs:
             --from-literal=SPRING_DATASOURCE_URL="${{ secrets.RDS_DATASOURCE_URL }}" \
             --from-literal=SPRING_DATASOURCE_USERNAME="${{ secrets.RDS_USERNAME }}" \
             --from-literal=SPRING_DATASOURCE_PASSWORD="${{ secrets.RDS_PASSWORD }}" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create/update Docker Hub image pull secret

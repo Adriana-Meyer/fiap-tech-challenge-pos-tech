@@ -98,8 +98,23 @@ O Flyway aplicará automaticamente as migrations V1 (schema), V2 (catálogo/peç
 |---|---|---|
 | `JWT_SECRET` | `dev-only-secret-must-be-at-least-64-characters-long-for-hs512-ok` | Chave secreta para assinar os tokens JWT. **Substitua em produção.** |
 | `SPRING_PROFILES_ACTIVE` | `default` | Use `docker` quando executar via Docker Compose |
+| `NEW_RELIC_LICENSE_KEY` | *(vazio)* | License key de ingestão do New Relic. Sem ela, o agente Java simplesmente não se ativa (log de aviso, sem quebrar a aplicação) — não é necessária pra rodar localmente. |
 
 O perfil `docker` (`application-docker.yml`) configura a URL do banco para o container MySQL interno.
+
+---
+
+## Observabilidade (New Relic)
+
+O agente Java do New Relic é anexado via `-javaagent` na imagem Docker (ver [`Dockerfile`](Dockerfile)), configurado inteiramente por variáveis de ambiente (`k8s/01-config/app-configmap.yaml` + `NEW_RELIC_LICENSE_KEY` no Secret) — nenhum `newrelic.yml` é commitado no repositório.
+
+- **Logs estruturados em JSON**: [`logback-spring.xml`](src/main/resources/logback-spring.xml) usa `LogstashEncoder` pra formatar todo log como JSON.
+- **Correlação entre requisições**: com `application_logging.local_decorating` habilitado, o agente injeta `trace.id`/`span.id` no MDC de cada log — como o encoder inclui automaticamente todo o MDC, cada linha de log JSON já sai correlacionada com o trace da requisição, sem nenhum código manual de correlação.
+- **Métrica "tempo médio por status"**: `domain/service/MetricsPublisher` (porta) + `infrastructure/observability/NewRelicMetricsPublisher` (adapter) publicam um custom event `ServiceOrderStatusDuration` nos três pontos de transição de status da OS (`CompleteDiagnosisUseCase`, `FinishServiceItemExecutionUseCase`, `DeliverServiceOrderUseCase`). Dashboard via NRQL:
+  ```sql
+  SELECT average(durationMinutes) FROM ServiceOrderStatusDuration FACET status
+  ```
+- **Métricas de cluster** (CPU/memória dos pods, healthchecks): integração `nri-bundle` já provisionada no [Repositório 2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure).
 
 ---
 
