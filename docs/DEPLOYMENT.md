@@ -159,7 +159,7 @@ terraform destroy
 
 ## Deploy real na AWS (Fase 3)
 
-Além da simulação local com kind (acima, mantida por ora para validar manifests e economizar sessão/orçamento do AWS Academy — ver [ADR 0005](adr/0005-additive-deploy-paths.md)), existe um segundo caminho de deploy contra a infraestrutura real provisionada nos Repositórios [2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) (EKS) e [3](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure) (RDS): o workflow **`deploy-aws.yml`**, disparado manualmente (`workflow_dispatch`).
+Além da simulação local com kind (acima, mantida por ora para validar manifests e economizar sessão/orçamento do AWS Academy — ver [ADR 0010](adr/0010-additive-deploy-paths.md)), existe um segundo caminho de deploy contra a infraestrutura real provisionada nos Repositórios [2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) (EKS) e [3](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure) (RDS): o workflow **`deploy-aws.yml`**, disparado manualmente (`workflow_dispatch`).
 
 Diferenças em relação ao caminho kind:
 - Não roda Terraform neste repositório — só `aws eks update-kubeconfig` + `kubectl apply`, contra um cluster que os Repositórios 2/3 já provisionaram.

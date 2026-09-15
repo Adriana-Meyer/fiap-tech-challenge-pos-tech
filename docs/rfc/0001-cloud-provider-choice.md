@@ -25,7 +25,7 @@ AWS, via AWS Academy Learner Lab.
 
 ## Justificativa
 
-É a única opção sem custo direto disponível, e cobre integralmente os serviços obrigatórios da fase. As restrições do Lab (IAM fixo, sessão de 4h, limites de instância) são tratadas como restrições de design de primeira classe em todo o Terraform dos Repositórios 1-3, não contornadas — ver [ADR 0002](../adr/0002-fixed-iam-roles-aws-academy.md) e os guardrails de conta documentados nos READMEs de infraestrutura.
+É a única opção sem custo direto disponível, e cobre integralmente os serviços obrigatórios da fase. As restrições do Lab (IAM fixo, sessão de 4h, limites de instância) são tratadas como restrições de design de primeira classe em todo o Terraform dos Repositórios 1-3, não contornadas — ver [ADR 0007](../adr/0007-fixed-iam-roles-aws-academy.md) e os guardrails de conta documentados nos READMEs de infraestrutura.
 
 ## Consequências
 

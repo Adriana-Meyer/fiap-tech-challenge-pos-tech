@@ -1,4 +1,4 @@
-# ADR 0005: Dois caminhos de deploy no Repositório 4, aditivos
+# ADR 0010: Dois caminhos de deploy no Repositório 4, aditivos
 
 **Status**: Aceito
 **Data**: 2026-09-13

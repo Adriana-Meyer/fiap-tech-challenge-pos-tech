@@ -1,4 +1,4 @@
-# ADR 0001: CPF substitui e-mail como identificador de login
+# ADR 0006: CPF substitui e-mail como identificador de login
 
 **Status**: Aceito
 **Data**: 2026-09-12

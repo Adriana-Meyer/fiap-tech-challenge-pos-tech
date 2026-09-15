@@ -1,4 +1,4 @@
-# ADR 0003: RDS single-AZ, sem Multi-AZ
+# ADR 0008: RDS single-AZ, sem Multi-AZ
 
 **Status**: Aceito
 **Data**: 2026-09-13

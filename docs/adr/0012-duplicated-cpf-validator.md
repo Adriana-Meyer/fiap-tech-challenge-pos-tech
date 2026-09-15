@@ -1,4 +1,4 @@
-# ADR 0007: Validação de CPF duplicada entre a App e a Lambda, não compartilhada via lib
+# ADR 0012: Validação de CPF duplicada entre a App e a Lambda, não compartilhada via lib
 
 **Status**: Aceito
 **Data**: 2026-09-13

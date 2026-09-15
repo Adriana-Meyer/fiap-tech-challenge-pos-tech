@@ -1,4 +1,4 @@
-# ADR 0002: Uso de roles IAM fixos do AWS Academy (sem IAM próprio)
+# ADR 0007: Uso de roles IAM fixos do AWS Academy (sem IAM próprio)
 
 **Status**: Aceito
 **Data**: 2026-09-12

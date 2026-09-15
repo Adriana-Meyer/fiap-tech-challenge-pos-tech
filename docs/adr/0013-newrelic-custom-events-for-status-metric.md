@@ -1,4 +1,4 @@
-# ADR 0008: Custom events do New Relic em vez de endpoint REST novo para a métrica de status
+# ADR 0013: Custom events do New Relic em vez de endpoint REST novo para a métrica de status
 
 **Status**: Aceito
 **Data**: 2026-09-13

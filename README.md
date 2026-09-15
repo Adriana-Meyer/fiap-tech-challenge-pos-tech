@@ -135,7 +135,7 @@ http://localhost:8080/swagger-ui.html
 
 ### Como autenticar no Swagger UI
 
-1. Faça login em **POST /api/v1/auth/login** com o CPF e a senha de um dos usuários abaixo (a autenticação é por CPF, não e-mail — ver [ADR 0001](docs/adr/0001-cpf-replaces-email-login.md))
+1. Faça login em **POST /api/v1/auth/login** com o CPF e a senha de um dos usuários abaixo (a autenticação é por CPF, não e-mail — ver [ADR 0006](docs/adr/0006-cpf-replaces-email-login.md))
 2. Copie o valor do campo `token` da resposta
 3. Clique no botão **Authorize** (cadeado) no topo da página
 4. Cole o token no campo **Value** (sem o prefixo `Bearer `) e clique em **Authorize**
@@ -156,7 +156,7 @@ Postman: *Import → Link* · Insomnia: *Import → From URL*. Isso traz todas a
 
 ## Usuários Padrão (seed V3 + V4)
 
-Login por **CPF** (não e-mail — ver [ADR 0001](docs/adr/0001-cpf-replaces-email-login.md)):
+Login por **CPF** (não e-mail — ver [ADR 0006](docs/adr/0006-cpf-replaces-email-login.md)):
 
 | CPF | Senha | Role | Capacidades |
 |---|---|---|---|

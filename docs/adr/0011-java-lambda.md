@@ -1,4 +1,4 @@
-# ADR 0006: Lambda de autenticação em Java, não Node.js
+# ADR 0011: Lambda de autenticação em Java, não Node.js
 
 **Status**: Aceito
 **Data**: 2026-09-13
@@ -22,4 +22,4 @@ Mitigações para o trade-off de cold start (Java tipicamente 1-2s vs. ~100-300m
 
 - Empacotamento via `maven-shade-plugin` (uber-jar) é necessário — mais um passo de build (`mvn package`) antes do `terraform apply`/`validate`, ausente numa Lambda Node.js baseada em `archive_file` puro.
 - Cold start de ~1-2s na primeira chamada após período ocioso — irrelevante para o volume de uso de um projeto acadêmico.
-- `CpfValidator` da Lambda duplica o algoritmo já existente na App (`domain/model/shared/CpfValidator.java`) — ver [ADR 0007](0007-duplicated-cpf-validator.md).
+- `CpfValidator` da Lambda duplica o algoritmo já existente na App (`domain/model/shared/CpfValidator.java`) — ver [ADR 0012](0012-duplicated-cpf-validator.md).

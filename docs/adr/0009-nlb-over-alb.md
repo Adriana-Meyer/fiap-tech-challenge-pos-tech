@@ -1,4 +1,4 @@
-# ADR 0004: Network Load Balancer em vez de Application Load Balancer
+# ADR 0009: Network Load Balancer em vez de Application Load Balancer
 
 **Status**: Aceito
 **Data**: 2026-09-13
