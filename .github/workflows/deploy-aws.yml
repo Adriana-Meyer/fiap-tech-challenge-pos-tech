@@ -10,6 +10,14 @@ name: Deploy to AWS (EKS + RDS)
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: 'Deploy the app, or tear it down (delete the Service first, releasing the NLB, before Repo 2/3 are destroyed)'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - destroy
       environment:
         description: 'Target environment'
         required: true
@@ -22,6 +30,7 @@ on:
 jobs:
   deploy:
     name: Deploy to EKS
+    if: github.event.inputs.action == 'deploy'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: ${{ github.event.inputs.environment }}
@@ -100,4 +109,46 @@ jobs:
             sleep 10
           done
           echo "App did not become healthy in time" >&2
+          exit 1
+
+  destroy:
+    name: Tear down app from EKS
+    if: github.event.inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ github.event.inputs.environment }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      AWS_REGION: us-east-1
+      EKS_CLUSTER_NAME: tech-challenge-eks
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl for the EKS cluster
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
+
+      # Deleting the Service first (not just the Deployment) is the whole
+      # point: it's what tells the AWS cloud-controller to release the NLB.
+      # Do this before destroying Repo 2/3's Terraform, or the NLB (and its
+      # hourly cost) can be orphaned with no cluster left to clean it up.
+      - name: Delete app resources
+        run: |
+          kubectl delete -f k8s/aws/service-loadbalancer.yaml --ignore-not-found
+          kubectl delete -f k8s/03-app/hpa.yaml --ignore-not-found
+          kubectl delete -f k8s/03-app/deployment.yaml --ignore-not-found
+          kubectl delete secret app-secret dockerhub-secret -n workshop --ignore-not-found
+
+      - name: Wait for the NLB to be released
+        run: |
+          for i in $(seq 1 30); do
+            HOST=$(kubectl get svc workshop-app -n workshop -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            if [ -z "$HOST" ]; then
+              echo "LoadBalancer released (or Service already gone)."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for the LoadBalancer to be released — check the AWS console before destroying Repo 2/3." >&2
           exit 1
