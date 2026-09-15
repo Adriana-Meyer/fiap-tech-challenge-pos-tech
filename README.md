@@ -29,7 +29,14 @@ flowchart TB
     ExternoWebhook -- "POST /webhooks/estimate-approval<br/>POST /webhooks/email-status-update<br/>JSON/HTTPS + X-Webhook-Token" --> Workshop
 ```
 
-Diagramas C4 completos (Contexto, Containers, Componentes) e a explicação da camada de arquitetura: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+Diagramas C4 completos (Contexto, Containers, Componentes), a visão de nuvem da Fase 3 e os diagramas de sequência (autenticação, abertura de OS): **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+### Documentação da Fase 3
+
+- **[ADRs](docs/adr/)** — decisões arquiteturais permanentes (ex.: CPF como login, NLB vs. ALB, roles IAM fixos do Lab)
+- **[RFCs](docs/rfc/)** — decisões técnicas com contexto e alternativas (escolha da nuvem, do banco, da estratégia de autenticação)
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — infraestrutura, CI/CD e os dois caminhos de deploy (kind local + AWS real)
+- Repositórios da infraestrutura: [1 — Lambda + API Gateway](https://github.com/Adriana-Meyer/fiap-tech-challenge-API-gateway-function-serverless) · [2 — VPC + EKS](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) · [3 — RDS](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure)
 
 ---
 
@@ -128,7 +135,7 @@ http://localhost:8080/swagger-ui.html
 
 ### Como autenticar no Swagger UI
 
-1. Faça login em **POST /api/v1/auth/login** com um dos usuários abaixo
+1. Faça login em **POST /api/v1/auth/login** com o CPF e a senha de um dos usuários abaixo (a autenticação é por CPF, não e-mail — ver [ADR 0006](docs/adr/0006-cpf-replaces-email-login.md))
 2. Copie o valor do campo `token` da resposta
 3. Clique no botão **Authorize** (cadeado) no topo da página
 4. Cole o token no campo **Value** (sem o prefixo `Bearer `) e clique em **Authorize**
@@ -147,14 +154,16 @@ Postman: *Import → Link* · Insomnia: *Import → From URL*. Isso traz todas a
 
 ---
 
-## Usuários Padrão (seed V3)
+## Usuários Padrão (seed V3 + V4)
 
-| E-mail | Senha | Role | Capacidades |
+Login por **CPF** (não e-mail — ver [ADR 0006](docs/adr/0006-cpf-replaces-email-login.md)):
+
+| CPF | Senha | Role | Capacidades |
 |---|---|---|---|
-| `admin@workshop.com` | `workshop123` | `ROLE_ADMIN` | Acesso total |
-| `consultor@workshop.com` | `workshop123` | `ROLE_CONSULTANT` | Criar OS, aprovar/rejeitar orçamento, entregar veículo, CRUD clientes/veículos |
-| `mecanico@workshop.com` | `workshop123` | `ROLE_MECHANIC` | Iniciar diagnóstico, adicionar itens, registrar execução por item |
-| `estoquista@workshop.com` | `workshop123` | `ROLE_STOCKIST` | Visualizar e ajustar estoque de peças/insumos |
+| `11144477735` | `workshop123` | `ROLE_ADMIN` | Acesso total |
+| `22255588846` | `workshop123` | `ROLE_CONSULTANT` | Criar OS, aprovar/rejeitar orçamento, entregar veículo, CRUD clientes/veículos |
+| `33366699957` | `workshop123` | `ROLE_MECHANIC` | Iniciar diagnóstico, adicionar itens, registrar execução por item |
+| `44477722214` | `workshop123` | `ROLE_STOCKIST` | Visualizar e ajustar estoque de peças/insumos |
 
 ---
 
@@ -163,7 +172,7 @@ Postman: *Import → Link* · Insomnia: *Import → From URL*. Isso traz todas a
 ### 1. Autenticação
 ```
 POST /api/v1/auth/login
-Body: { "email": "admin@workshop.com", "password": "workshop123" }
+Body: { "cpf": "11144477735", "password": "workshop123" }
 → Copie o token e autorize no Swagger
 ```
 
@@ -349,7 +358,7 @@ erDiagram
 
     users {
         CHAR(36)      id            PK
-        VARCHAR(255)  email         UK
+        VARCHAR(11)   cpf           UK
         VARCHAR(255)  password_hash
         VARCHAR(20)   role
         BOOLEAN       active

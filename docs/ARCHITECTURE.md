@@ -1,6 +1,112 @@
 # Arquitetura
 
-Documentação de arquitetura do Workshop Management System, usando o modelo **C4** (Contexto → Container → Componente) para descrever o sistema em níveis crescentes de detalhe. Para o modelo de dados (diagrama entidade-relacionamento e justificativa de escolha do MySQL), ver a seção [Modelagem do Banco de Dados](../README.md#modelagem-do-banco-de-dados) no README.
+Documentação de arquitetura do Workshop Management System, usando o modelo **C4** (Contexto → Container → Componente) para descrever o sistema em níveis crescentes de detalhe. Para o modelo de dados (diagrama entidade-relacionamento e justificativa de escolha do MySQL), ver a seção [Modelagem do Banco de Dados](../README.md#modelagem-do-banco-de-dados) no README. Decisões técnicas relevantes estão registradas como [ADRs](adr/) e [RFCs](rfc/).
+
+## Visão de Nuvem (Fase 3)
+
+Como os 4 repositórios da Fase 3 se conectam em produção — API Gateway como porta de entrada única, autenticação via CPF, banco gerenciado e observabilidade:
+
+```mermaid
+flowchart TB
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef repo1 fill:#ffd580,stroke:#b38600,color:#000
+    classDef repo2 fill:#b8e0b8,stroke:#4a8f4a,color:#000
+    classDef repo3 fill:#f4a6a6,stroke:#a85252,color:#000
+    classDef ext fill:#999999,stroke:#6b6b6b,color:#fff
+
+    Funcionario["Funcionário da Oficina<br/>[Pessoa]"]:::person
+
+    subgraph R1["Repositório 1 — API Gateway + Lambda"]
+        direction TB
+        APIGW["API Gateway (HTTP API)"]:::repo1
+        Lambda["Lambda auth-cpf (Java 17)<br/>valida CPF, delega login pra App"]:::repo1
+    end
+
+    subgraph R2["Repositório 2 — VPC + EKS"]
+        direction TB
+        EKS["EKS Cluster<br/>App (Repositório 4) em pods, HPA 1-5<br/>+ New Relic nri-bundle (métricas de cluster)"]:::repo2
+    end
+
+    subgraph R3["Repositório 3 — RDS"]
+        direction TB
+        RDS[("RDS MySQL 8.0<br/>single-AZ")]:::repo3
+    end
+
+    NewRelic["New Relic [SaaS]<br/>APM, logs estruturados, custom events,<br/>métricas de cluster, dashboards, alertas"]:::ext
+
+    Funcionario -- "POST /auth/token {cpf, senha}" --> APIGW
+    APIGW -- "invoke (AWS_PROXY)" --> Lambda
+    Lambda -- "POST /api/v1/auth/login" --> EKS
+    Funcionario -- "ANY /{proxy+}<br/>Authorization: Bearer &lt;token&gt;" --> APIGW
+    APIGW -- "HTTP proxy" --> EKS
+    EKS -- "JDBC :3306" --> RDS
+    EKS -. "agente Java: métricas, traces, logs" .-> NewRelic
+    EKS -. "nri-bundle: CPU/memória dos pods" .-> NewRelic
+```
+
+Repositórios: [1 — Lambda + API Gateway](https://github.com/Adriana-Meyer/fiap-tech-challenge-API-gateway-function-serverless) · [2 — VPC + EKS](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) · [3 — RDS](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure) · 4 — este repositório (App).
+
+## Diagramas de Sequência
+
+### Autenticação via CPF
+
+```mermaid
+sequenceDiagram
+    actor F as Funcionário
+    participant GW as API Gateway
+    participant L as Lambda (auth-cpf)
+    participant A as App (EKS)
+    participant DB as RDS MySQL
+
+    F->>GW: POST /auth/token {cpf, senha}
+    GW->>L: invoke (AWS_PROXY)
+    L->>L: valida checksum do CPF
+    alt CPF mal formado
+        L-->>GW: 400 Invalid CPF
+        GW-->>F: 400 Invalid CPF
+    else CPF com formato válido
+        L->>A: POST /api/v1/auth/login {cpf, senha}
+        A->>DB: SELECT * FROM users WHERE cpf = ?
+        DB-->>A: usuário (ou vazio)
+        alt credenciais inválidas ou usuário não existe
+            A-->>L: 401 Unauthorized
+            L-->>GW: 401 Unauthorized
+            GW-->>F: 401 Unauthorized
+        else credenciais válidas
+            A->>A: gera JWT (JwtService)
+            A-->>L: 200 {token}
+            L-->>GW: 200 {token}
+            GW-->>F: 200 {token}
+        end
+    end
+    F->>GW: ANY /{proxy+}<br/>Authorization: Bearer &lt;token&gt;
+    GW->>A: HTTP proxy
+    A->>A: valida JWT + RBAC (Spring Security, como hoje)
+    A-->>GW: 200 (recurso protegido)
+    GW-->>F: 200
+```
+
+### Abertura de Ordem de Serviço
+
+```mermaid
+sequenceDiagram
+    actor C as Consultor
+    participant GW as API Gateway
+    participant A as App (EKS)
+    participant DB as RDS MySQL
+    participant NR as New Relic
+
+    C->>GW: POST /api/v1/service-orders {customerId, vehicleId}<br/>Authorization: Bearer &lt;token&gt;
+    GW->>A: HTTP proxy
+    A->>A: valida JWT + role CONSULTANT/ADMIN
+    A->>DB: valida customer e vehicle existem
+    DB-->>A: ok
+    A->>DB: INSERT service_orders (status=RECEIVED, os_code=...)
+    DB-->>A: ok
+    A-->>NR: log estruturado (trace.id correlacionado)
+    A-->>GW: 201 {osCode, status: RECEIVED}
+    GW-->>C: 201
+```
 
 ## Nível 1 — Contexto
 
