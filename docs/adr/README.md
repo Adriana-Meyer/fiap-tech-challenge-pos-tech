@@ -1,6 +1,6 @@
 # ADRs (Architecture Decision Records)
 
-Decisões arquiteturais permanentes tomadas na Fase 3.
+Documentação das decisões arquiteturais do projeto:
 
 | # | Título |
 |---|---|

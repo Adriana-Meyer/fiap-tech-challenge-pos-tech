@@ -18,4 +18,4 @@ Todo recurso que precisa de uma role IAM referencia esses roles fixos via `data 
 
 - Nenhum módulo de Terraform de terceiros que tente criar roles IAM próprios pode ser usado sem adaptação (ex.: módulos populares de EKS na Terraform Registry costumam criar roles automaticamente — teria sido necessário desabilitar essa criação e apontar para os roles do Lab).
 - Se o Lab mudar os nomes desses roles entre turmas/sessões, os três repositórios de infra precisam ser atualizados (`LabRole`/`LabEksClusterRole` estão hardcoded como nomes fixos nos `data source`).
-- Reflete diretamente uma restrição de ambiente, não uma escolha de design "no vácuo" — documentado aqui para explicar por que o Terraform não segue o padrão mais comum de criar roles dedicados por recurso.
+- Reflete diretamente uma restrição de ambiente, não uma escolha de design diretamente — documentado aqui para explicar por que o Terraform não segue o padrão mais comum de criar roles dedicados por recurso.

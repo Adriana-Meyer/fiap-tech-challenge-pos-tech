@@ -13,7 +13,7 @@ Sem uma anotação explícita, o provider de nuvem legado embutido no EKS provis
 
 Usar NLB, forçado via a anotação `service.beta.kubernetes.io/aws-load-balancer-type: "nlb"`.
 
-Motivo de NLB em vez de ALB: a App é um único backend (não há múltiplos serviços que precisem de roteamento por path/host na borda) — o roteamento por conteúdo HTTP já é feito inteiramente pelo API Gateway (`/auth/token` vs `/{proxy+}`). O recurso central do ALB (roteamento L7 para múltiplos target groups) não tem uso nesta arquitetura. NLB entrega menor latência e funciona com uma simples anotação no controller que o EKS já traz — ALB "da forma correta" exigiria instalar o AWS Load Balancer Controller (Helm release adicional, com permissões IAM próprias) no Repositório 2, complexidade sem benefício funcional aqui.
+Motivo de NLB em vez de ALB: a App é um único backend (não há múltiplos serviços que precisem de roteamento por path/host na borda) — o roteamento por conteúdo HTTP já é feito inteiramente pelo API Gateway (`/auth/token` vs `/{proxy+}`). O recurso central do ALB (roteamento L7 para múltiplos target groups) não tem uso nesta arquitetura. NLB entrega menor latência e funciona com uma simples anotação no controller que o EKS já traz — ALB exigiria instalar o AWS Load Balancer Controller (Helm release adicional, com permissões IAM próprias) no Repositório 2, complexidade sem benefício funcional aqui.
 
 ## Consequências
 

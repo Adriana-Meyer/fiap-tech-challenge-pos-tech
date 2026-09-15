@@ -35,7 +35,7 @@ Critérios já validados desde a Fase 1 e que continuam se aplicando integralmen
 | **Continuidade** | Trocar de motor agora exigiria reescrever migrations, ajustar dialect do Hibernate e revalidar todo o comportamento já testado — sem ganho correspondente. |
 | **Suporte no Lab** | RDS for MySQL está na lista de mecanismos suportados pelo AWS Academy Learner Lab, dentro das classes de instância liberadas (nano/micro/small/medium). |
 
-O modelo relacional completo (diagrama ER e explicação dos relacionamentos) está no [README](../../README.md#modelagem-do-banco-de-dados). O único ajuste de schema feito nesta fase foi `users.email` → `users.cpf` (ver [ADR 0001](../adr/0001-cpf-replaces-email-login.md)) — não há mudança estrutural relacionada à migração para RDS em si, apenas ao onde o banco roda.
+O modelo relacional completo (diagrama ER e explicação dos relacionamentos) está no [README](../../README.md#modelagem-do-banco-de-dados). O único ajuste de schema feito nesta fase foi `users.email` → `users.cpf` (ver [ADR 0001](../adr/0001-cpf-replaces-email-login.md)) — não há mudança estrutural relacionada à migração para RDS em si, apenas ao local onde o banco roda.
 
 ## Consequências
 

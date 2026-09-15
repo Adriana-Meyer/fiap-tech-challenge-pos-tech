@@ -11,7 +11,7 @@ AWS Lambda suporta múltiplas runtimes (Node.js, Python, Java, Go, .NET, Ruby, e
 
 Implementar a Lambda em Java 17 + Maven, e não em Node.js (a opção inicialmente cogitada por ter cold start mais rápido para uma função tão simples).
 
-Motivo: manter uma única linguagem de aplicação em todo o projeto (a App já é Java/Spring Boot) e aproveitar o projeto como oportunidade de aprofundamento em Java — decisão explícita da autora do projeto, não uma otimização técnica.
+Motivo: manter uma única linguagem de aplicação em todo o projeto (a App já é Java/Spring Boot) e aproveitar o projeto como oportunidade de aprofundamento na linguagem Java.
 
 Mitigações para o trade-off de cold start (Java tipicamente 1-2s vs. ~100-300ms do Node, nesta função sem framework):
 - Sem Spring nem qualquer framework de aplicação — só `aws-lambda-java-core`/`events` + Jackson, evitando o custo de inicialização de um contexto de aplicação.
@@ -21,5 +21,5 @@ Mitigações para o trade-off de cold start (Java tipicamente 1-2s vs. ~100-300m
 ## Consequências
 
 - Empacotamento via `maven-shade-plugin` (uber-jar) é necessário — mais um passo de build (`mvn package`) antes do `terraform apply`/`validate`, ausente numa Lambda Node.js baseada em `archive_file` puro.
-- Cold start de ~1-2s na primeira chamada após período ocioso — irrelevante para o volume de uso de um projeto acadêmico; only aparece como um detalhe a considerar ao gravar o vídeo de demonstração (uma chamada de "aquecimento" antes de gravar evita esse atraso na cena).
+- Cold start de ~1-2s na primeira chamada após período ocioso — irrelevante para o volume de uso de um projeto acadêmico.
 - `CpfValidator` da Lambda duplica o algoritmo já existente na App (`domain/model/shared/CpfValidator.java`) — ver [ADR 0007](0007-duplicated-cpf-validator.md).

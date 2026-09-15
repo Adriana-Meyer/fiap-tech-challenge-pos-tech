@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O dashboard da Fase 3 exige "tempo médio de execução por status (Diagnóstico, Execução, Finalização)". Já existia um endpoint (`GET /api/v1/service-orders/analytics/avg-execution-time`) calculando tempo médio, mas **por tipo de serviço** (ex.: troca de óleo), não por status da OS — não atende ao requisito literal.
+O dashboard da Fase 3 exige "tempo médio de execução por status (Diagnóstico, Execução, Finalização)". Já existia um endpoint (`GET /api/v1/service-orders/analytics/avg-execution-time`) calculando tempo médio, mas **por tipo de serviço** (ex.: troca de óleo), não por status da OS — não atenderia ao requisito da fase.
 
 ## Decisão
 
@@ -17,4 +17,3 @@ Motivo: essa é a forma nativa de alimentar um dashboard do New Relic (consultad
 
 - A métrica só existe dentro do New Relic (via NRQL `SELECT average(durationMinutes) FROM ServiceOrderStatusDuration FACET status`) — não é consultável via API própria da aplicação. Se a métrica precisasse ser exposta programaticamente para outro consumidor além do dashboard, um endpoint dedicado ainda seria necessário.
 - Acoplamento pequeno e explícito das três use cases ao `MetricsPublisher` (porta de domínio, não ao SDK do New Relic diretamente) — segue o mesmo padrão porta/adapter já usado para notificações, preservando a Clean Architecture.
-- Sem dados até o agente estar de fato reportando para uma conta New Relic real (com license key válida).

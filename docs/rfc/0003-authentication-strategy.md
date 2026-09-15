@@ -9,7 +9,7 @@ A Fase 3 exige proteger as rotas sensíveis com autenticação via CPF, através
 
 ## Contexto
 
-A App já tem autenticação JWT stateless via Spring Security (`JwtService`, `JwtAuthenticationFilter`, `SecurityConfig`), com RBAC por role (`ADMIN`, `CONSULTANT`, `MECHANIC`, `STOCKIST`) testado desde a Fase 1. O enunciado sugere explicitamente duas formas de a Lambda participar: (a) como **Lambda Authorizer** dentro do API Gateway, validando o token a cada requisição; ou (b) a **Lambda consultar a própria App**, que continua fazendo a validação como já faz hoje.
+A App já tem autenticação JWT stateless via Spring Security (`JwtService`, `JwtAuthenticationFilter`, `SecurityConfig`), com RBAC por role (`ADMIN`, `CONSULTANT`, `MECHANIC`, `STOCKIST`) testado desde a Fase 1. Foram avalidadas duas formas de a Lambda participar: (a) como **Lambda Authorizer** dentro do API Gateway, validando o token a cada requisição; ou (b) a **Lambda consultar a própria App**, que continua fazendo a validação como já faz hoje.
 
 ## Opções consideradas
 
@@ -23,10 +23,6 @@ A Lambda validaria o JWT (assinatura, expiração, claims) a cada requisição a
 ### Opção B — Lambda consulta a própria App (escolhida)
 
 A Lambda participa só da **emissão** do token: valida o formato/checksum do CPF (rejeição rápida de entradas malformadas, sem round-trip de banco) e delega a autenticação de verdade para o endpoint de login já existente na App (`POST /api/v1/auth/login`, adaptado para `{cpf, senha}` — [ADR 0001](../adr/0001-cpf-replaces-email-login.md)). Todas as demais rotas passam por HTTP proxy direto da App, que continua validando o JWT e o RBAC exatamente como hoje (`JwtAuthenticationFilter`, `SecurityConfig`).
-
-## Decisão
-
-Opção B — corresponde literalmente ao fluxo de exemplo do próprio enunciado ("cliente informa o CPF > gateway > lambda > API > devolve token gerado").
 
 ## Justificativa
 
