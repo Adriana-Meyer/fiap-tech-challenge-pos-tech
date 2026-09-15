@@ -1,10 +1,6 @@
-# Used only by the real AWS deploy (see .github/workflows/deploy-aws.yml).
-# The kind-based local/CI pipeline keeps using k8s/03-app/service.yaml
-# (NodePort) — kind has no cloud load balancer controller to satisfy
-# this type. Lives in k8s/aws/, not k8s/03-app/, on purpose: infra/manifests.tf
-# applies every *.yaml under 03-app/ for the kind path, and a second
-# Service named "workshop-app" there breaks that apply with
-# "resource already exists".
+# Used only by the real AWS deploy (see .github/workflows/deploy-aws.yml),
+# which is why it lives in k8s/aws/ alongside secret-aws.yaml.example
+# rather than k8s/03-app/.
 apiVersion: v1
 kind: Service
 metadata:

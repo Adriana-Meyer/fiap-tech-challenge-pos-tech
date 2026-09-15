@@ -6,11 +6,11 @@ name: Deploy to AWS (EKS + RDS)
 # push. The deploy itself is automatic end-to-end once triggered, with
 # no manual steps during the run — only the trigger is manual, fired
 # whenever convenient and the Lab session is active.
-# Tested successfully end-to-end on 2026-09-15. The kind-based
-# deploy-hml/deploy-prod jobs in ci-cd.yml, kept during development as
-# a free pre-validation path independent of the AWS Lab session, are
-# being retired now that the AWS path is validated — tracked in a
-# separate branch/PR, not this one.
+# Tested successfully end-to-end on 2026-09-15. This is now the only
+# deploy path — the kind-based deploy-hml/deploy-prod jobs that used to
+# live in ci-cd.yml (a free pre-validation path independent of the AWS
+# Lab session, used during development) were removed once this path was
+# validated. See ADR 0014.
 on:
   workflow_dispatch:
     inputs:
@@ -75,11 +75,9 @@ jobs:
             --docker-password="${{ secrets.DOCKERHUB_TOKEN }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # Intentionally skips k8s/02-mysql and k8s/01-config/mysql-configmap.yaml
-      # (database is the RDS instance from Repo 3). k8s/aws/ holds the
-      # manifests specific to this path, kept outside 00-namespace/
-      # 01-config/02-mysql/03-app so the kind pipeline's infra/manifests.tf
-      # (which globs every *.yaml in those 4 folders) never picks them up.
+      # No mysql-config/mysql-secret step here — the database is the RDS
+      # instance from Repo 3, not a pod in this cluster. k8s/aws/ holds the
+      # manifests specific to this path (e.g. the LoadBalancer Service).
       - name: Deploy app
         run: |
           kubectl apply -f k8s/03-app/deployment.yaml
