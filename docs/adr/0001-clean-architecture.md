@@ -22,5 +22,5 @@ As setas de dependência sempre apontam para dentro: `infrastructure` depende de
 
 - O domínio (`domain/model`) é testável com JUnit puro, sem Spring Boot Test, sem banco — testes rápidos e isolados (ver `domain/model/serviceorder/ServiceOrderTest`, `domain/model/customer/DocumentTest`, etc.).
 - Toda nova integração externa (ex.: New Relic na Fase 3 — [ADR 0013](0013-newrelic-custom-events-for-status-metric.md)) segue o mesmo padrão porta/adapter: interface em `domain/service`, implementação em `infrastructure`, nunca o inverso.
-- Curva de entrada maior para quem não conhece o padrão: uma operação de negócio simples toca em vários arquivos (port, use case, DTOs, controller) em vez de um único controller "gordo".
+- Curva de entrada maior para quem não conhece o padrão: uma operação de negócio simples toca em vários arquivos (port, use case, DTOs, controller) em vez de um único controller "inflado".
 - Trade-off aceito deliberadamente em favor de manutenibilidade e testabilidade a longo prazo, mesmo custando mais boilerplate por operação.
