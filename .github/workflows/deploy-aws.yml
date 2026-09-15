@@ -1,12 +1,16 @@
 name: Deploy to AWS (EKS + RDS)
 
-# Manual only for now. The EKS cluster (Repo 2) and RDS (Repo 3) are
-# not always up — they get destroyed between AWS Academy sessions to
-# save budget — so this can't safely run on every push yet. The
-# existing kind-based deploy-hml/deploy-prod jobs in ci-cd.yml keep
-# validating every push for now, independent of the AWS Lab session.
-# This becomes the automatic production deploy later, closer to
-# project delivery.
+# workflow_dispatch permanently, by design — not a stopgap. The EKS
+# cluster (Repo 2) and RDS (Repo 3) aren't always up (destroyed between
+# AWS Academy sessions to save budget), so this can't run on every
+# push. The deploy itself is automatic end-to-end once triggered, with
+# no manual steps during the run — only the trigger is manual, fired
+# whenever convenient and the Lab session is active.
+# Tested successfully end-to-end on 2026-09-15. The kind-based
+# deploy-hml/deploy-prod jobs in ci-cd.yml, kept during development as
+# a free pre-validation path independent of the AWS Lab session, are
+# being retired now that the AWS path is validated — tracked in a
+# separate branch/PR, not this one.
 on:
   workflow_dispatch:
     inputs:
