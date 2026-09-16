@@ -1,10 +1,12 @@
 # Deploy e Infraestrutura
 
-Como o Workshop Management System é conteinerizado, orquestrado e entregue continuamente — Docker, Kubernetes, Terraform e o pipeline de CI/CD.
+Como o Workshop Management System é conteinerizado, orquestrado e entregue na AWS real — Docker, Kubernetes (EKS), RDS e o pipeline de CI/CD.
 
-## Infraestrutura
+A infraestrutura de cluster e banco não vive neste repositório: é provisionada via Terraform nos Repositórios [2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) (VPC + EKS) e [3](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure) (RDS MySQL). Este repositório só aplica os manifests da aplicação contra o cluster já existente.
 
-Topologia do cluster provisionado (namespace, ConfigMaps/Secrets, Deployments, Services, HPA e o add-on de métricas):
+## Infraestrutura (o que roda no cluster)
+
+Topologia da aplicação depois do `deploy-aws.yml` (namespace, ConfigMap/Secrets, Deployment, HPA e o Service `LoadBalancer`):
 
 ```mermaid
 flowchart TB
@@ -15,144 +17,61 @@ flowchart TB
     classDef store fill:#ffd580,stroke:#b38600,color:#000
 
     DockerHub["Docker Hub<br/>[Sistema Externo]<br/>adrianameyer/workshop-management<br/>tags: latest, sha"]:::external
+    RDS["RDS MySQL 8.0<br/>[Repositório 3]"]:::external
 
-    subgraph Kind["Kind Cluster 'workshop' (Docker-in-Docker no runner)"]
+    subgraph EKS["EKS Cluster 'tech-challenge-eks' (Repositório 2)"]
       direction TB
       subgraph NS["Namespace: workshop"]
         direction TB
 
-        subgraph Config["ConfigMaps / Secrets"]
+        subgraph Config["ConfigMap / Secrets"]
           direction LR
           CM1["app-config"]:::store
-          CM2["mysql-config"]:::store
-          SEC1["app-secret<br/>JWT_SECRET, WEBHOOK_TOKEN,<br/>SPRING_DATASOURCE_*"]:::store
-          SEC2["mysql-secret<br/>MYSQL_ROOT_PASSWORD,<br/>MYSQL_PASSWORD"]:::store
-          SEC3["dockerhub-secret<br/>imagePullSecret"]:::store
+          SEC1["app-secret<br/>JWT_SECRET, WEBHOOK_TOKEN,<br/>SPRING_DATASOURCE_* (aponta pro RDS),<br/>NEW_RELIC_LICENSE_KEY"]:::store
+          SEC2["dockerhub-secret<br/>imagePullSecret"]:::store
         end
 
         DeployApp["Deployment: workshop-app<br/>1 réplica (HPA: 1-5)<br/>requests 250m/256Mi · limits 500m/512Mi<br/>liveness/readiness: /actuator/health/*"]:::deploy
-        SvcApp["Service: workshop-app<br/>NodePort · 8080 → 30080"]:::svc
+        SvcApp["Service: workshop-app<br/>LoadBalancer (NLB) · 8080"]:::svc
         HPA["HPA: workshop-app-hpa<br/>CPU 70% / Memória 70%<br/>min=1, max=5"]:::deploy
-
-        DeployMysql["Deployment: mysql<br/>1 réplica · strategy Recreate<br/>image mysql:8.0"]:::deploy
-        SvcMysql["Service: mysql<br/>ClusterIP · 3306"]:::svc
-        PVC["PVC: mysql-pvc<br/>/var/lib/mysql"]:::store
-
-        MetricsServer["metrics-server<br/>vendorizado, --kubelet-insecure-tls<br/>alimenta métricas de CPU/Mem para o HPA"]:::deploy
       end
     end
 
-    Host["Acesso externo<br/>localhost:30080"]:::node
+    Host["Acesso externo<br/>hostname do NLB"]:::node
 
     DockerHub -- "imagePullSecret: dockerhub-secret" --> DeployApp
     CM1 --> DeployApp
     SEC1 --> DeployApp
-    CM2 --> DeployMysql
-    SEC2 --> DeployMysql
     DeployApp --> SvcApp
-    SvcApp -- "NodePort 30080" --> Host
+    SvcApp -- "NLB" --> Host
     HPA -. "escala" .-> DeployApp
-    MetricsServer -. "métricas" .-> HPA
-    DeployApp -- "JDBC :3306" --> SvcMysql
-    SvcMysql --> DeployMysql
-    DeployMysql --> PVC
+    DeployApp -- "JDBC :3306" --> RDS
 ```
 
-Manifestos em [`k8s/`](../k8s/), organizados em estágios ordenados de aplicação: `00-namespace` → `01-config` → `02-mysql` → `03-app`.
+> HPA depende de um metrics-server (ou equivalente) disponível no cluster para ler CPU/memória — isso é responsabilidade do Repositório 2, não deste repositório.
 
-## Provisionamento via Terraform
-
-Todo o cluster é provisionado declarativamente a partir de [`infra/`](../infra/) — nenhum `kubectl apply` manual:
-
-- **`main.tf`**: providers `tehcyx/kind` (cria o cluster) e o provider oficial `hashicorp/kubernetes` (aplica os recursos).
-- **`cluster.tf`**: `kind_cluster.workshop`, com `extra_port_mappings` expondo a porta `30080` do host.
-- **`variables.tf`**: 6 variáveis sensíveis, sem valor default — `mysql_root_password`, `mysql_password`, `jwt_secret`, `webhook_token`, `dockerhub_username`, `dockerhub_password`.
-- **`secrets.tf`**: cria os 3 Secrets (`app-secret`, `mysql-secret`, `dockerhub-secret`) como recursos nativos `kubernetes_secret`, direto a partir das variáveis acima — nenhum valor real chega a ser escrito em disco ou commitado.
-- **`manifests.tf`**: aplica **todos** os arquivos de `/k8s` (namespace, config, MySQL e app) via `kubernetes_manifest` (recurso genérico do provider oficial) lendo os YAML reais com `yamldecode(file(...))`, em vez de reescrever cada recurso como HCL nativo — evita duplicar a mesma definição em dois formatos diferentes. A ordem de aplicação (namespace → config → mysql → app) é garantida por `depends_on` encadeado entre os 4 estágios.
-- **`metrics-server.tf`**: mesmo padrão genérico, aplicando os manifestos vendorizados do metrics-server (com o patch `--kubelet-insecure-tls`, necessário porque o kind não tem certificados TLS válidos entre os nós).
-
-### Bootstrap em duas passadas
-
-O recurso `kubernetes_manifest` precisa consultar o schema OpenAPI do cluster já no momento do `terraform plan` — o que cria uma dependência circular na primeira execução, quando o cluster ainda não existe. Por isso, a criação exige duas passadas:
-
-```bash
-cd infra
-terraform init
-
-# 1ª passada: só o cluster (resolve a dependência circular)
-terraform apply -target=kind_cluster.workshop
-
-# 2ª passada: todo o resto (namespace, secrets, config, mysql, app, metrics-server)
-terraform apply
-```
+Manifestos em [`k8s/`](../k8s/): `00-namespace/`, `01-config/app-configmap.yaml` e `03-app/` (`deployment.yaml`, `hpa.yaml`, `service.yaml`).
 
 ## Pipeline de CI/CD
 
-GitHub Actions ([`.github/workflows/`](../.github/workflows/)): `ci-cd.yml` orquestra o pipeline e `deploy.yml` é um workflow reutilizável (`workflow_call`) compartilhado pelos dois ambientes simulados — **Homologação** (branch `develop`) e **Produção** (branch `main`).
+GitHub Actions ([`.github/workflows/`](../.github/workflows/)):
 
-```mermaid
-flowchart TD
-    classDef trigger fill:#08427b,stroke:#052e56,color:#fff
-    classDef job fill:#438dd5,stroke:#2e6295,color:#fff
-    classDef gate fill:#c6e2ff,stroke:#5d82a8,color:#000
-    classDef infra fill:#ffd580,stroke:#b38600,color:#000
-    classDef ext fill:#999999,stroke:#6b6b6b,color:#fff
+- **`ci-cd.yml`** — roda em todo push/PR para `develop`/`main`: `build-and-test` (`mvn verify`, gate JaCoCo ≥ 80%) e, só em push (nunca em PR), `build-and-push-image` (build + push da imagem para o Docker Hub: `latest` + `sha`). Não faz nenhum deploy — só valida e publica a imagem.
+- **`deploy-aws.yml`** — disparado manualmente (`workflow_dispatch`), com escolha entre `deploy`/`destroy` e ambiente (`homologacao`/`producao`). É o único caminho de deploy do projeto:
+  1. `aws eks update-kubeconfig` contra o cluster do Repositório 2.
+  2. Aplica `k8s/00-namespace/namespace.yaml` e `k8s/01-config/app-configmap.yaml`.
+  3. Cria/atualiza o Secret `app-secret` a partir de GitHub Secrets — incluindo `SPRING_DATASOURCE_URL`/`_USERNAME`/`_PASSWORD` apontando para o RDS do Repositório 3 (chegam automaticamente via `gh secret set`, sem cópia manual) — e o `dockerhub-secret` (imagePullSecret).
+  4. Aplica `k8s/03-app/deployment.yaml`, `hpa.yaml` e `service.yaml`.
+  5. Espera o rollout, espera o hostname do NLB, faz smoke test em `/actuator/health`.
+  - `action: destroy` desfaz na ordem inversa, deletando o Service **primeiro** (libera o NLB) antes do Deployment/HPA/secrets — importante para não deixar o NLB órfão (e cobrando) quando os Repositórios 2/3 forem destruídos depois.
 
-    Push["push / PR em develop ou main"]:::trigger
+Fica `workflow_dispatch` manual permanentemente, inclusive no estado final entregue: essa é a alternativa adotada para economizar os recursos limitados do Lab (sessão de ~4h, cluster/RDS não ficam sempre no ar) — o deploy em si é automático de ponta a ponta assim que disparado, sem nenhuma intervenção manual durante a execução; só o gatilho é manual, para ser acionado quando for conveniente e a sessão do Lab estiver ativa.
 
-    Push --> BuildTest["build-and-test<br/>mvn -B verify<br/>gate: cobertura JaCoCo ≥ 80%<br/>upload jacoco-report"]:::job
-
-    BuildTest -->|"push (não PR) em develop/main"| BuildPush["build-and-push-image<br/>docker/build-push-action<br/>push para Docker Hub: latest + sha"]:::job
-
-    BuildPush -->|"ref == develop"| DeployHml["deploy-hml (workflow_call)<br/>Environment: homologacao"]:::gate
-    BuildPush -->|"ref == main"| DeployProd["deploy-prod (workflow_call)<br/>Environment: producao"]:::gate
-
-    subgraph Deploy["deploy.yml (reusável — roda para hml OU prod)"]
-      direction TB
-      TfInit["terraform init"]:::infra
-      TfBootstrap["terraform apply -target=kind_cluster.workshop<br/>(bootstrap: cluster precisa existir antes<br/>do schema OpenAPI ser lido no plan)"]:::infra
-      TfApply["terraform apply<br/>stack completo: namespace, config,<br/>secrets, mysql, app, metrics-server"]:::infra
-      Rollout["kubectl rollout status<br/>deployment/workshop-app"]:::infra
-      Verify["get pods / get hpa / top nodes"]:::infra
-      Smoke["curl localhost:30080/actuator/health<br/>retry até status UP"]:::infra
-      TfDestroy["terraform destroy<br/>always(), continue-on-error"]:::infra
-
-      TfInit --> TfBootstrap --> TfApply --> Rollout --> Verify --> Smoke --> TfDestroy
-    end
-
-    DeployHml --> Deploy
-    DeployProd --> Deploy
-
-    DockerHubExt["Docker Hub"]:::ext
-    BuildPush -. "push image" .-> DockerHubExt
-    TfApply -. "pull image (dockerhub-secret)" .-> DockerHubExt
-```
-
-**Pontos importantes do desenho:**
-- `build-and-test` roda em todo push e PR para `develop`/`main` — feedback rápido, sem custo de imagem/deploy.
-- `build-and-push-image` e os dois `deploy-*` só rodam em **push** (nunca em PR) para `develop`/`main` — evita builds/deploys desnecessários durante revisão de código.
-- O cluster kind roda **dentro do próprio runner** do GitHub Actions (o provider `tehcyx/kind` usa a lib Go `sigs.k8s.io/kind` diretamente, sem depender de nenhum binário externo — só precisa do Docker, que já vem pronto no runner `ubuntu-latest`) — é efêmero, existe só durante o job, e é destruído ao final (`terraform destroy`). O objetivo é provar que a automação de ponta a ponta funciona, não manter um ambiente ativo.
-- `homologacao` e `producao` usam exatamente a mesma imagem e o mesmo código Terraform — a diferença entre os dois ambientes está só em qual branch dispara qual GitHub Environment.
-
-## Rodando localmente
-
-Mesmo roteiro usado para validar a infraestrutura manualmente:
-
-```bash
-cd infra
-terraform init
-terraform apply -target=kind_cluster.workshop
-terraform apply
-
-kubectl get pods -n workshop
-kubectl get hpa -n workshop
-curl http://localhost:30080/actuator/health
-
-terraform destroy
-```
+> Este projeto já rodou um caminho de deploy local via **kind** (cluster efêmero dentro do próprio runner) durante boa parte do desenvolvimento — validação gratuita e independente de sessão do Lab, enquanto o deploy real na AWS ainda não existia. Com o deploy real testado e validado de ponta a ponta, esse caminho foi removido (ver [ADR 0014](adr/0014-remove-kind-deploy-path.md)); o histórico de como funcionava está em [ADR 0005](adr/0005-terraform-kind-ci-validation.md).
 
 ## Segurança e Secrets
 
-- As 6 variáveis sensíveis (`mysql_root_password`, `mysql_password`, `jwt_secret`, `webhook_token`, `dockerhub_username`, `dockerhub_password`) não têm valor default no `variables.tf` — precisam ser fornecidas via `TF_VAR_<nome>` no ambiente, tanto localmente quanto no pipeline (onde vêm dos GitHub Actions Secrets do repositório).
-- `k8s/secret.yaml.example` e `k8s/mysql-secret.yaml.example` são só templates de referência (valores `CHANGE_ME`) — documentam a estrutura esperada caso alguém precise criar um Secret manualmente via `kubectl`, mas não são lidos pelo Terraform nem aplicados automaticamente.
-- `infra/.terraform/` e `infra/terraform.tfstate*` estão no `.gitignore` — o state do Terraform armazena os valores dos secrets em texto plano, então nunca é commitado.
+- Nenhum valor sensível é commitado. Os secrets do `app-secret` (`JWT_SECRET`, `WEBHOOK_TOKEN`, credenciais do RDS, `NEW_RELIC_LICENSE_KEY`) e do `dockerhub-secret` vêm de GitHub Secrets deste repositório, aplicados via `kubectl create secret ... --dry-run=client -o yaml | kubectl apply -f -` dentro do `deploy-aws.yml`.
+- `k8s/secret.yaml.example` é só um template de referência (valores `CHANGE_ME`) — documenta a estrutura esperada, mas não é lido pelo workflow nem aplicado automaticamente.
+- As credenciais do RDS (`RDS_DATASOURCE_URL`/`RDS_USERNAME`/`RDS_PASSWORD`) chegam automaticamente como Secrets deste repositório: o `terraform-apply.yml` do Repositório 3 faz `terraform output` e envia via `gh secret set` direto para cá (nunca aparecem em log).
+- Credenciais AWS (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_SESSION_TOKEN`) são as temporárias da sessão do AWS Academy Learner Lab — precisam ser atualizadas nos GitHub Secrets a cada nova sessão (~4h).

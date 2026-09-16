@@ -23,6 +23,8 @@
         <springdoc.version>2.3.0</springdoc.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <jacoco.version>0.8.11</jacoco.version>
+        <newrelic.version>8.15.0</newrelic.version>
+        <logstash-encoder.version>7.4</logstash-encoder.version>
     </properties>
 
     <dependencies>
@@ -90,6 +92,24 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- ===== New Relic (API only — the actual agent is attached at
+             runtime via -javaagent, see Dockerfile; these calls are safe
+             no-ops when the agent isn't attached, e.g. in tests) ===== -->
+        <dependency>
+            <groupId>com.newrelic.agent.java</groupId>
+            <artifactId>newrelic-api</artifactId>
+            <version>${newrelic.version}</version>
+        </dependency>
+
+        <!-- ===== Structured JSON logging (New Relic agent injects
+             trace.id/span.id into the MDC — logback-spring.xml surfaces
+             them as JSON fields) ===== -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-encoder.version}</version>
         </dependency>
 
         <!-- ===== Test ===== -->

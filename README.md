@@ -29,7 +29,14 @@ flowchart TB
     ExternoWebhook -- "POST /webhooks/estimate-approval<br/>POST /webhooks/email-status-update<br/>JSON/HTTPS + X-Webhook-Token" --> Workshop
 ```
 
-Diagramas C4 completos (Contexto, Containers, Componentes) e a explicação da camada de arquitetura: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+Diagramas C4 completos (Contexto, Containers, Componentes), a visão de nuvem da Fase 3 e os diagramas de sequência (autenticação, abertura de OS): **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+### Documentação da Fase 3
+
+- **[ADRs](docs/adr/)** — decisões arquiteturais permanentes (ex.: CPF como login, NLB vs. ALB, roles IAM fixos do Lab)
+- **[RFCs](docs/rfc/)** — decisões técnicas com contexto e alternativas (escolha da nuvem, do banco, da estratégia de autenticação)
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — infraestrutura, CI/CD e o deploy real na AWS
+- Repositórios da infraestrutura: [1 — Lambda + API Gateway](https://github.com/Adriana-Meyer/fiap-tech-challenge-API-gateway-function-serverless) · [2 — VPC + EKS](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) · [3 — RDS](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure)
 
 ---
 
@@ -98,8 +105,25 @@ O Flyway aplicará automaticamente as migrations V1 (schema), V2 (catálogo/peç
 |---|---|---|
 | `JWT_SECRET` | `dev-only-secret-must-be-at-least-64-characters-long-for-hs512-ok` | Chave secreta para assinar os tokens JWT. **Substitua em produção.** |
 | `SPRING_PROFILES_ACTIVE` | `default` | Use `docker` quando executar via Docker Compose |
+| `NEW_RELIC_LICENSE_KEY` | *(vazio)* | License key de ingestão do New Relic. Sem ela, o agente Java simplesmente não se ativa (log de aviso, sem quebrar a aplicação) — não é necessária pra rodar localmente. |
 
 O perfil `docker` (`application-docker.yml`) configura a URL do banco para o container MySQL interno.
+
+---
+
+## Observabilidade (New Relic)
+
+O agente Java do New Relic é anexado via `-javaagent` na imagem Docker (ver [`Dockerfile`](Dockerfile)), configurado inteiramente por variáveis de ambiente (`k8s/01-config/app-configmap.yaml` + `NEW_RELIC_LICENSE_KEY` no Secret) — nenhum `newrelic.yml` é commitado no repositório.
+
+- **Logs estruturados em JSON**: [`logback-spring.xml`](src/main/resources/logback-spring.xml) usa `LogstashEncoder` pra formatar todo log como JSON.
+- **Correlação entre requisições**: com `application_logging.local_decorating` habilitado, o agente injeta `trace.id`/`span.id` no MDC de cada log — como o encoder inclui automaticamente todo o MDC, cada linha de log JSON já sai correlacionada com o trace da requisição, sem nenhum código manual de correlação.
+- **Métrica "tempo médio por status"**: `domain/service/MetricsPublisher` (porta) + `infrastructure/observability/NewRelicMetricsPublisher` (adapter) publicam um custom event `ServiceOrderStatusDuration` nos três pontos de transição de status da OS (`CompleteDiagnosisUseCase`, `FinishServiceItemExecutionUseCase`, `DeliverServiceOrderUseCase`). Dashboard via NRQL:
+  ```sql
+  SELECT average(durationMinutes) FROM ServiceOrderStatusDuration FACET status
+  ```
+- **Métricas de cluster** (CPU/memória dos pods, healthchecks): integração `nri-bundle` já provisionada no [Repositório 2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure).
+
+Exemplos reais de cada um desses recursos (APM, dashboard customizado, logs correlacionados, traces distribuídos) em [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md).
 
 ---
 
@@ -113,7 +137,7 @@ http://localhost:8080/swagger-ui.html
 
 ### Como autenticar no Swagger UI
 
-1. Faça login em **POST /api/v1/auth/login** com um dos usuários abaixo
+1. Faça login em **POST /api/v1/auth/login** com o CPF e a senha de um dos usuários abaixo (a autenticação é por CPF, não e-mail — ver [ADR 0006](docs/adr/0006-cpf-replaces-email-login.md))
 2. Copie o valor do campo `token` da resposta
 3. Clique no botão **Authorize** (cadeado) no topo da página
 4. Cole o token no campo **Value** (sem o prefixo `Bearer `) e clique em **Authorize**
@@ -132,14 +156,16 @@ Postman: *Import → Link* · Insomnia: *Import → From URL*. Isso traz todas a
 
 ---
 
-## Usuários Padrão (seed V3)
+## Usuários Padrão (seed V3 + V4)
 
-| E-mail | Senha | Role | Capacidades |
+Login por **CPF** (não e-mail — ver [ADR 0006](docs/adr/0006-cpf-replaces-email-login.md)):
+
+| CPF | Senha | Role | Capacidades |
 |---|---|---|---|
-| `admin@workshop.com` | `workshop123` | `ROLE_ADMIN` | Acesso total |
-| `consultor@workshop.com` | `workshop123` | `ROLE_CONSULTANT` | Criar OS, aprovar/rejeitar orçamento, entregar veículo, CRUD clientes/veículos |
-| `mecanico@workshop.com` | `workshop123` | `ROLE_MECHANIC` | Iniciar diagnóstico, adicionar itens, registrar execução por item |
-| `estoquista@workshop.com` | `workshop123` | `ROLE_STOCKIST` | Visualizar e ajustar estoque de peças/insumos |
+| `11144477735` | `workshop123` | `ROLE_ADMIN` | Acesso total |
+| `22255588846` | `workshop123` | `ROLE_CONSULTANT` | Criar OS, aprovar/rejeitar orçamento, entregar veículo, CRUD clientes/veículos |
+| `33366699957` | `workshop123` | `ROLE_MECHANIC` | Iniciar diagnóstico, adicionar itens, registrar execução por item |
+| `44477722214` | `workshop123` | `ROLE_STOCKIST` | Visualizar e ajustar estoque de peças/insumos |
 
 ---
 
@@ -148,7 +174,7 @@ Postman: *Import → Link* · Insomnia: *Import → From URL*. Isso traz todas a
 ### 1. Autenticação
 ```
 POST /api/v1/auth/login
-Body: { "email": "admin@workshop.com", "password": "workshop123" }
+Body: { "cpf": "11144477735", "password": "workshop123" }
 → Copie o token e autorize no Swagger
 ```
 
@@ -334,7 +360,7 @@ erDiagram
 
     users {
         CHAR(36)      id            PK
-        VARCHAR(255)  email         UK
+        VARCHAR(11)   cpf           UK
         VARCHAR(255)  password_hash
         VARCHAR(20)   role
         BOOLEAN       active
@@ -357,26 +383,9 @@ erDiagram
 Além da execução local via Docker Compose, o projeto tem uma esteira completa de containerização, orquestração e entrega contínua:
 
 - **Docker** — imagem multi-stage (build Maven + runtime `eclipse-temurin:17-jre`, usuário não-root), ver [`Dockerfile`](Dockerfile).
-- **Kubernetes** — manifests em [`k8s/`](k8s/), organizados em estágios ordenados (`00-namespace` → `01-config` → `02-mysql` → `03-app`), incluindo HPA (1–5 réplicas, CPU/memória 70%).
-- **Terraform** — provisionamento declarativo em [`infra/`](infra/): cria um cluster **kind** (`tehcyx/kind`) e aplica os manifests de `k8s/` via `kubernetes_manifest` (`hashicorp/kubernetes`), lendo os arquivos reais sem duplicar YAML.
-- **CI/CD** — GitHub Actions ([`.github/workflows/`](.github/workflows/)): build + testes (gate JaCoCo 80%) em todo push/PR; build & push de imagem no push para `develop`/`main`; deploy automatizado nos ambientes `homologacao` (branch `develop`) e `producao` (branch `main`), cada um provisionando um cluster kind efêmero dentro do próprio runner e destruindo-o ao final.
+- **Kubernetes** — manifests em [`k8s/`](k8s/), organizados em estágios ordenados (`00-namespace` → `01-config` → `03-app`), incluindo HPA (1–5 réplicas, CPU/memória 70%). O banco é o RDS gerenciado do [Repositório 3](https://github.com/Adriana-Meyer/fiap-tech-challenge-database-infrastructure), não um pod no cluster.
+- **CI/CD** — GitHub Actions ([`.github/workflows/`](.github/workflows/)): build + testes (gate JaCoCo 80%) em todo push/PR, build & push de imagem no push para `develop`/`main` (`ci-cd.yml`); deploy real na AWS via `deploy-aws.yml`, disparado manualmente (`workflow_dispatch`) contra o EKS do [Repositório 2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure) — ver [Deploy real na AWS](docs/DEPLOYMENT.md#deploy-real-na-aws-fase-3) para detalhes.
 
-### Rodando a infraestrutura localmente
-
-```bash
-cd infra
-terraform init
-
-# Bootstrap: o provider kubernetes precisa do cluster já existindo
-# para ler o schema OpenAPI no plan — por isso duas passadas:
-terraform apply -target=kind_cluster.workshop
-terraform apply
-
-curl http://localhost:30080/actuator/health
-
-terraform destroy
-```
-
-> As variáveis sensíveis (`mysql_root_password`, `mysql_password`, `jwt_secret`, `webhook_token`, `dockerhub_username`, `dockerhub_password`) não têm valor padrão — defina-as via `TF_VAR_<nome>` no ambiente antes do `terraform apply`. Os arquivos `k8s/*.example` servem apenas de referência caso os secrets sejam aplicados manualmente com `kubectl`, fora do fluxo Terraform.
+Ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para o passo a passo completo do deploy real na AWS.
 
 Diagrama de infraestrutura, detalhamento do pipeline de CI/CD e o passo a passo completo: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
