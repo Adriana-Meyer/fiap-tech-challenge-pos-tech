@@ -123,6 +123,8 @@ O agente Java do New Relic é anexado via `-javaagent` na imagem Docker (ver [`D
   ```
 - **Métricas de cluster** (CPU/memória dos pods, healthchecks): integração `nri-bundle` já provisionada no [Repositório 2](https://github.com/Adriana-Meyer/fiap-tech-challenge-kubernetes-infrastructure).
 
+Exemplos reais de cada um desses recursos (APM, dashboard customizado, logs correlacionados, traces distribuídos) em [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md).
+
 ---
 
 ## Documentação da API (Swagger UI)
