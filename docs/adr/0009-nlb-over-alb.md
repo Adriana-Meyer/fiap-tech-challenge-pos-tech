@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O Service `workshop-app` (Repositório 4, `k8s/aws/service-loadbalancer.yaml`) precisa expor a App para o [API Gateway (Repositório 1)](https://github.com/Adriana-Meyer/fiap-tech-challenge-API-gateway-function-serverless) alcançá-la via HTTP proxy. A AWS oferece três modalidades de Elastic Load Balancing: Classic (legado), Application (ALB, camada 7 — roteamento por conteúdo HTTP) e Network (NLB, camada 4 — só encaminha conexões TCP).
+O Service `workshop-app` (Repositório 4, `k8s/03-app/service.yaml`) precisa expor a App para o [API Gateway (Repositório 1)](https://github.com/Adriana-Meyer/fiap-tech-challenge-API-gateway-function-serverless) alcançá-la via HTTP proxy. A AWS oferece três modalidades de Elastic Load Balancing: Classic (legado), Application (ALB, camada 7 — roteamento por conteúdo HTTP) e Network (NLB, camada 4 — só encaminha conexões TCP).
 
 Sem uma anotação explícita, o provider de nuvem legado embutido no EKS provisiona por padrão um **Classic Load Balancer** para um Service `type: LoadBalancer` — o que aconteceu de fato numa iteração inicial deste projeto e quebrou o pipeline de validação local (kind), revelando a lacuna.
 

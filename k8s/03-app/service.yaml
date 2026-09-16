@@ -1,6 +1,3 @@
-# Used only by the real AWS deploy (see .github/workflows/deploy-aws.yml),
-# which is why it lives in k8s/aws/ alongside secret-aws.yaml.example
-# rather than k8s/03-app/.
 apiVersion: v1
 kind: Service
 metadata:

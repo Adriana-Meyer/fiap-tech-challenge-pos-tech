@@ -50,7 +50,7 @@ flowchart TB
 
 > HPA depende de um metrics-server (ou equivalente) disponível no cluster para ler CPU/memória — isso é responsabilidade do Repositório 2, não deste repositório.
 
-Manifestos em [`k8s/`](../k8s/): `00-namespace/`, `01-config/app-configmap.yaml`, `03-app/` (`deployment.yaml` + `hpa.yaml`) e `aws/service-loadbalancer.yaml`.
+Manifestos em [`k8s/`](../k8s/): `00-namespace/`, `01-config/app-configmap.yaml` e `03-app/` (`deployment.yaml`, `hpa.yaml`, `service.yaml`).
 
 ## Pipeline de CI/CD
 
@@ -61,7 +61,7 @@ GitHub Actions ([`.github/workflows/`](../.github/workflows/)):
   1. `aws eks update-kubeconfig` contra o cluster do Repositório 2.
   2. Aplica `k8s/00-namespace/namespace.yaml` e `k8s/01-config/app-configmap.yaml`.
   3. Cria/atualiza o Secret `app-secret` a partir de GitHub Secrets — incluindo `SPRING_DATASOURCE_URL`/`_USERNAME`/`_PASSWORD` apontando para o RDS do Repositório 3 (chegam automaticamente via `gh secret set`, sem cópia manual) — e o `dockerhub-secret` (imagePullSecret).
-  4. Aplica `k8s/03-app/deployment.yaml` + `hpa.yaml` e `k8s/aws/service-loadbalancer.yaml`.
+  4. Aplica `k8s/03-app/deployment.yaml`, `hpa.yaml` e `service.yaml`.
   5. Espera o rollout, espera o hostname do NLB, faz smoke test em `/actuator/health`.
   - `action: destroy` desfaz na ordem inversa, deletando o Service **primeiro** (libera o NLB) antes do Deployment/HPA/secrets — importante para não deixar o NLB órfão (e cobrando) quando os Repositórios 2/3 forem destruídos depois.
 
@@ -72,6 +72,6 @@ Fica `workflow_dispatch` manual permanentemente, inclusive no estado final entre
 ## Segurança e Secrets
 
 - Nenhum valor sensível é commitado. Os secrets do `app-secret` (`JWT_SECRET`, `WEBHOOK_TOKEN`, credenciais do RDS, `NEW_RELIC_LICENSE_KEY`) e do `dockerhub-secret` vêm de GitHub Secrets deste repositório, aplicados via `kubectl create secret ... --dry-run=client -o yaml | kubectl apply -f -` dentro do `deploy-aws.yml`.
-- `k8s/aws/secret-aws.yaml.example` é só um template de referência (valores `CHANGE_ME`) — documenta a estrutura esperada, mas não é lido pelo workflow nem aplicado automaticamente.
+- `k8s/secret.yaml.example` é só um template de referência (valores `CHANGE_ME`) — documenta a estrutura esperada, mas não é lido pelo workflow nem aplicado automaticamente.
 - As credenciais do RDS (`RDS_DATASOURCE_URL`/`RDS_USERNAME`/`RDS_PASSWORD`) chegam automaticamente como Secrets deste repositório: o `terraform-apply.yml` do Repositório 3 faz `terraform output` e envia via `gh secret set` direto para cá (nunca aparecem em log).
 - Credenciais AWS (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_SESSION_TOKEN`) são as temporárias da sessão do AWS Academy Learner Lab — precisam ser atualizadas nos GitHub Secrets a cada nova sessão (~4h).

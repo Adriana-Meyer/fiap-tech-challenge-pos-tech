@@ -76,13 +76,12 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
       # No mysql-config/mysql-secret step here — the database is the RDS
-      # instance from Repo 3, not a pod in this cluster. k8s/aws/ holds the
-      # manifests specific to this path (e.g. the LoadBalancer Service).
+      # instance from Repo 3, not a pod in this cluster.
       - name: Deploy app
         run: |
           kubectl apply -f k8s/03-app/deployment.yaml
           kubectl apply -f k8s/03-app/hpa.yaml
-          kubectl apply -f k8s/aws/service-loadbalancer.yaml
+          kubectl apply -f k8s/03-app/service.yaml
 
       - name: Wait for rollout
         run: kubectl rollout status deployment/workshop-app -n workshop --timeout=300s
@@ -137,7 +136,7 @@ jobs:
       # hourly cost) can be orphaned with no cluster left to clean it up.
       - name: Delete app resources
         run: |
-          kubectl delete -f k8s/aws/service-loadbalancer.yaml --ignore-not-found
+          kubectl delete -f k8s/03-app/service.yaml --ignore-not-found
           kubectl delete -f k8s/03-app/hpa.yaml --ignore-not-found
           kubectl delete -f k8s/03-app/deployment.yaml --ignore-not-found
           kubectl delete secret app-secret dockerhub-secret -n workshop --ignore-not-found
